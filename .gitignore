@@ -1,0 +1,9 @@
+# .NET build output
+bin/
+obj/
+
+# Rider
+.idea/
+
+# SAM build artifacts
+.aws-sam/
