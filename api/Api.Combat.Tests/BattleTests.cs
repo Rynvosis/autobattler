@@ -31,4 +31,33 @@ public class BattleTests
 
         Assert.Equal(BattleOutcome.Loss, result.Outcome);
     }
+
+
+    [Fact]
+    public void MutualWipe_EmitsEventsInScheduleOrder()
+    {
+        
+        Unit player = new() { Id = 0, Attack = 1, MaxHealth = 2 };
+        Unit ghost = new() { Id = 1, Attack = 1, MaxHealth = 2 };
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
+        
+        BattleEvent[] expected =
+        [
+            new() { Kind = EventKind.OnStart, Tick = 0, Subtick = 0 },
+
+            new() { Kind = EventKind.OnUnitAttack, Tick = 1, Subtick = 0, Source = player.Id, Target = ghost.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitAttack, Tick = 1, Subtick = 0, Source = ghost.Id, Target = player.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitHurt,   Tick = 1, Subtick = 1, Source = player.Id, Target = ghost.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitHurt,   Tick = 1, Subtick = 1, Source = ghost.Id, Target = player.Id, Value = 1 },
+
+            new() { Kind = EventKind.OnUnitAttack, Tick = 2, Subtick = 0, Source = player.Id, Target = ghost.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitAttack, Tick = 2, Subtick = 0, Source = ghost.Id, Target = player.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitHurt,   Tick = 2, Subtick = 1, Source = player.Id, Target = ghost.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitHurt,   Tick = 2, Subtick = 1, Source = ghost.Id, Target = player.Id, Value = 1 },
+            new() { Kind = EventKind.OnUnitFaint,  Tick = 2, Subtick = 1, Target = player.Id },
+            new() { Kind = EventKind.OnUnitFaint,  Tick = 2, Subtick = 1, Target = ghost.Id },
+        ];
+        
+        Assert.Equal(expected, result.Events);
+    }
 }

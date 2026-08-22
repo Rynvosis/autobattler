@@ -101,9 +101,9 @@ the run.
 | `OnStart`      | Once, before the first attack | -        | -            | -            |
 | `OnUnitAttack` | An `attack` effect resolves   | Attacker | Struck unit  | Damage dealt |
 | `OnUnitHurt`   | A unit takes damage           | Dealer   | Damaged unit | Damage dealt |
-| `OnUnitFaint`  | A unit is marked dead         | Killer   | Dead unit    | -            |
+| `OnUnitFaint`  | A unit is marked dead         | -        | Dead unit    | -            |
 
-- Records carry tick, subtick, and the slots of source and target.
+- Records carry tick, subtick, and the ids of source and target.
 - The log is flat. The client groups by tick and subtick.
 
 ## Triggers

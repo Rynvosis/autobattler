@@ -11,6 +11,7 @@ public class Battle
     private readonly Dictionary<int, Unit> _unitsById;
     private readonly List<BattleEvent> _events = [];
     private int _tick;
+    private int _subtick;
 
     private Battle(Team player, Team ghost)
     {
@@ -67,18 +68,27 @@ public class Battle
 
     private void RunBattleStart()
     {
+        Emit(EventKind.OnStart);
     }
 
     private void RunTick()
     {
+        _tick++;
+        _subtick = 0;
+        
         Unit playerHead = _player.Head;
         Unit ghostHead = _ghost.Head;
 
         //manual attack logic, todo: queue into first subtick when implement subtick
+        Emit(EventKind.OnUnitAttack, playerHead.Id, ghostHead.Id, playerHead.Attack);
+        Emit(EventKind.OnUnitAttack, ghostHead.Id, playerHead.Id, ghostHead.Attack);
+        
+        _subtick++;
         playerHead.Health -= ghostHead.Attack;
         ghostHead.Health -= playerHead.Attack;
+        Emit(EventKind.OnUnitHurt, playerHead.Id, ghostHead.Id, playerHead.Attack);
+        Emit(EventKind.OnUnitHurt, ghostHead.Id, playerHead.Id, ghostHead.Attack);
 
-        _tick++;
     }
 
     private void ResolveDeaths()
@@ -94,10 +104,22 @@ public class Battle
 
         foreach ((Unit unit, Position position) in dead)
         {
+            Emit(EventKind.OnUnitFaint, target: unit.Id);
             Team team = TeamFor(position.Side);
             team.Remove(unit);
         }
     }
+
+    private void Emit(EventKind kind, int? source = null, int? target = null, int? value = null) =>
+        _events.Add(new BattleEvent
+        {
+            Kind = kind,
+            Tick = _tick,
+            Subtick = _subtick,
+            Source = source,
+            Target = target,
+            Value = value,
+        });
 
     private Unit? Find(int id) => _unitsById.GetValueOrDefault(id);
 
