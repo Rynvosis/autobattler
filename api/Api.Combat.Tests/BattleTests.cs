@@ -2,27 +2,21 @@ namespace Api.Combat.Tests;
 
 public class BattleTests
 {
-    [Fact]
-    public void TwoIdenticalUnits_Draw()
+    [Theory]
+    [InlineData(1, 1, 1, 1, BattleOutcome.Draw)]
+    [InlineData(0, 1, 0, 1, BattleOutcome.Draw)]
+    [InlineData(1, 3, 1, 3, BattleOutcome.Draw)]
+    [InlineData(1, 2, 1, 1, BattleOutcome.Win)]
+    [InlineData(3, 1, 0, 2, BattleOutcome.Win)]
+    [InlineData(1, 1, 1, 2, BattleOutcome.Loss)]
+    public void HeadToHead(int playerAttack, int playerHealth, int ghostAttack, int ghostHealth,
+        BattleOutcome expected)
     {
-        Unit p1 = new Unit { Id = 0, Attack = 1, MaxHealth = 1 };
-        Team pTeam = new Team([p1]);
-        Unit g1 = new Unit { Id = 1, Attack = 1, MaxHealth = 1 };
-        Team gTeam = new Team([g1]);
+        Unit player = new Unit { Id = 0, Attack = playerAttack, MaxHealth = playerHealth };
+        Unit ghost = new Unit { Id = 1, Attack = ghostAttack, MaxHealth = ghostHealth };
 
-        BattleResult result = Battle.Resolve(pTeam, gTeam);
-        Assert.Equal(BattleOutcome.Draw, result.Outcome);
-    }
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
 
-    [Fact]
-    public void OneStrongerUnit_Wins()
-    {
-        Unit p1 = new Unit { Id = 0, Attack = 1, MaxHealth = 2 };
-        Team pTeam = new Team([p1]);
-        Unit g1 = new Unit { Id = 1, Attack = 1, MaxHealth = 1 };
-        Team gTeam = new Team([g1]);
-
-        BattleResult result = Battle.Resolve(pTeam, gTeam);
-        Assert.Equal(BattleOutcome.Win, result.Outcome);
+        Assert.Equal(expected, result.Outcome);
     }
 }
