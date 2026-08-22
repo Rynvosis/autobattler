@@ -1,4 +1,4 @@
-namespace Api.Combat;
+namespace Api.Combat.Events;
 
 public record BattleResult
 {

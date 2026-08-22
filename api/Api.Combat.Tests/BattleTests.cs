@@ -19,7 +19,7 @@ public class BattleTests
 
         Assert.Equal(expected, result.Outcome);
     }
-    
+
     [Fact]
     public void TwoVersusOne()
     {

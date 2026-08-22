@@ -1,3 +1,5 @@
+using Api.Combat.Events;
+
 namespace Api.Combat;
 
 public class Battle
