@@ -2,14 +2,16 @@ using Api.Combat.Events;
 
 namespace Api.Combat;
 
-public class Battle
+public class Battle : IBattleContext
 {
     private const int TickCap = 64;
+    private const int SubtickCap = 32;
 
     private readonly Team _player;
     private readonly Team _ghost;
-    private readonly Dictionary<int, Unit> _unitsById;
     private readonly List<BattleEvent> _events = [];
+    private List<QueuedEffect> _wave = [];
+    private List<QueuedEffect> _nextWave = [];
     private int _tick;
     private int _subtick;
 
@@ -17,7 +19,6 @@ public class Battle
     {
         _player = player;
         _ghost = ghost;
-        _unitsById = player.Units.Concat(ghost.Units).ToDictionary(unit => unit.Id);
     }
 
     public static BattleResult Resolve(Team player, Team ghost) =>
@@ -79,16 +80,32 @@ public class Battle
         Unit playerHead = _player.Head;
         Unit ghostHead = _ghost.Head;
 
-        //manual attack logic, todo: queue into first subtick when implement subtick
-        Emit(EventKind.OnUnitAttack, playerHead.Id, ghostHead.Id, playerHead.Attack);
-        Emit(EventKind.OnUnitAttack, ghostHead.Id, playerHead.Id, ghostHead.Attack);
-        
-        _subtick++;
-        playerHead.Health -= ghostHead.Attack;
-        ghostHead.Health -= playerHead.Attack;
-        Emit(EventKind.OnUnitHurt, playerHead.Id, ghostHead.Id, playerHead.Attack);
-        Emit(EventKind.OnUnitHurt, ghostHead.Id, playerHead.Id, ghostHead.Attack);
+        Emit(EventKind.OnUnitAttack, playerHead, ghostHead, playerHead.Attack);
+        Emit(EventKind.OnUnitAttack, ghostHead, playerHead, ghostHead.Attack);
 
+        //todo: queue these into the next wave instead of applying them here
+        _subtick++;
+        Damage playerDamage = new()
+        {
+            Source = playerHead,
+            Targets = [ghostHead],
+            Value = playerHead.Attack
+        };
+        playerDamage.Apply(this);
+        Damage ghostDamage = new()
+        {
+            Source = ghostHead,
+            Targets = [playerHead],
+            Value = ghostHead.Attack
+        };
+        ghostDamage.Apply(this);
+    }
+
+    void IBattleContext.Emit(EventKind kind, Unit? source, Unit? target, int? value) =>
+        Emit(kind, source, target, value);
+
+    private void RunSubticks()
+    {
     }
 
     private void ResolveDeaths()
@@ -104,24 +121,22 @@ public class Battle
 
         foreach ((Unit unit, Position position) in dead)
         {
-            Emit(EventKind.OnUnitFaint, target: unit.Id);
+            Emit(EventKind.OnUnitFaint, target: unit);
             Team team = TeamFor(position.Side);
             team.Remove(unit);
         }
     }
 
-    private void Emit(EventKind kind, int? source = null, int? target = null, int? value = null) =>
+    private void Emit(EventKind kind, Unit? source = null, Unit? target = null, int? value = null) =>
         _events.Add(new BattleEvent
         {
             Kind = kind,
             Tick = _tick,
             Subtick = _subtick,
-            Source = source,
-            Target = target,
+            Source = source?.Id,
+            Target = target?.Id,
             Value = value,
         });
-
-    private Unit? Find(int id) => _unitsById.GetValueOrDefault(id);
 
     private IReadOnlyList<(Unit unit, Position position)> UnitsInIterationOrder()
     {
