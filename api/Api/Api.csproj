@@ -5,4 +5,8 @@
         <PackageReference Include="Swashbuckle.AspNetCore"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Api.Combat\Api.Combat.csproj"/>
+    </ItemGroup>
+
 </Project>
