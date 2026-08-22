@@ -19,4 +19,16 @@ public class BattleTests
 
         Assert.Equal(expected, result.Outcome);
     }
+    
+    [Fact]
+    public void TwoVersusOne()
+    {
+        Unit player1 = new Unit { Id = 0, Attack = 1, MaxHealth = 2 };
+        Unit player2 = new Unit { Id = 1, Attack = 1, MaxHealth = 2 };
+        Unit ghost = new Unit { Id = 2, Attack = 2, MaxHealth = 3 };
+
+        BattleResult result = Battle.Resolve(new Team([player1, player2]), new Team([ghost]));
+
+        Assert.Equal(BattleOutcome.Loss, result.Outcome);
+    }
 }
