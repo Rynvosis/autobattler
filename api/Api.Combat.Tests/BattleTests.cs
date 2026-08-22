@@ -9,11 +9,11 @@ public class BattleTests
     [InlineData(1, 2, 1, 1, BattleOutcome.Win)]
     [InlineData(3, 1, 0, 2, BattleOutcome.Win)]
     [InlineData(1, 1, 1, 2, BattleOutcome.Loss)]
-    public void HeadToHead(int playerAttack, int playerHealth, int ghostAttack, int ghostHealth,
+    public void OneVersusOne_ReturnsExpectedOutcome(int playerAttack, int playerHealth, int ghostAttack, int ghostHealth,
         BattleOutcome expected)
     {
-        Unit player = new Unit { Id = 0, Attack = playerAttack, MaxHealth = playerHealth };
-        Unit ghost = new Unit { Id = 1, Attack = ghostAttack, MaxHealth = ghostHealth };
+        Unit player = new() { Id = 0, Attack = playerAttack, MaxHealth = playerHealth };
+        Unit ghost = new() { Id = 1, Attack = ghostAttack, MaxHealth = ghostHealth };
 
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
 
@@ -21,11 +21,11 @@ public class BattleTests
     }
 
     [Fact]
-    public void TwoVersusOne()
+    public void TwoVersusOne_GhostSurvives_ReturnsLoss()
     {
-        Unit player1 = new Unit { Id = 0, Attack = 1, MaxHealth = 2 };
-        Unit player2 = new Unit { Id = 1, Attack = 1, MaxHealth = 2 };
-        Unit ghost = new Unit { Id = 2, Attack = 2, MaxHealth = 3 };
+        Unit player1 = new() { Id = 0, Attack = 1, MaxHealth = 2 };
+        Unit player2 = new() { Id = 1, Attack = 1, MaxHealth = 2 };
+        Unit ghost = new() { Id = 2, Attack = 2, MaxHealth = 3 };
 
         BattleResult result = Battle.Resolve(new Team([player1, player2]), new Team([ghost]));
 
