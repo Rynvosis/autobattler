@@ -6,11 +6,8 @@ public record BattleEvent
     public required int Tick { get; init; }
     public required int Subtick { get; init; }
 
-    public Side? SourceSide { get; init; }
-    public int? SourceSlot { get; init; }
-
-    public Side? TargetSide { get; init; }
-    public int? TargetSlot { get; init; }
+    public Position? Source { get; init; }
+    public Position? Target { get; init; }
 
     public int? Value { get; init; }
 }

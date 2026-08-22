@@ -9,8 +9,9 @@ public class Team
     public IReadOnlyList<Unit> Units => _units;
 
     public bool IsEmpty => _units.Count == 0;
+    public int Count => _units.Count;
 
-    public Unit? MaybeHead => _units.ElementAtOrDefault(0);
+    public Unit Head => _units[0];
 
     public void Remove(Unit unit) => _units.Remove(unit);
 }
