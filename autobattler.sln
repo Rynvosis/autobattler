@@ -11,6 +11,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Combat", "api\Api.Comba
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Combat.Tests", "api\Api.Combat.Tests\Api.Combat.Tests.csproj", "{7D24E9B0-1A3F-48C6-B5E8-2C9F0A6D4E15}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{589E5DD7-6EAE-4ED5-8F7A-0FF06116371B}"
+	ProjectSection(SolutionItems) = preProject
+		DESIGN.md = DESIGN.md
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
