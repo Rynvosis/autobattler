@@ -40,3 +40,5 @@ public sealed record UnitHurtEvent : SourcedUnitEvent
 }
 
 public sealed record UnitDeathEvent : UnitEvent;
+
+public sealed record UnitKillEvent : SourcedUnitEvent;

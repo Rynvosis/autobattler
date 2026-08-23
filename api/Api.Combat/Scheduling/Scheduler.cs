@@ -10,10 +10,12 @@ public class Scheduler(Board board) : IResolutionContext
     private const int SubtickCap = 32;
 
     private readonly List<BattleEvent> _stepEvents = [];
-    private List<QueuedEffect> _effectsThisSubtick = [];
     private List<QueuedEffect> _effectsNextSubtick = [];
-    private int _tick;
+    private List<QueuedEffect> _effectsThisSubtick = [];
     private int _subtick;
+    private int _tick;
+
+    void IResolutionContext.Emit(BattleEvent battleEvent) => Emit(battleEvent);
 
     public IEnumerable<IReadOnlyList<BattleEvent>> Steps()
     {
@@ -30,8 +32,6 @@ public class Scheduler(Board board) : IResolutionContext
             yield return [.. _stepEvents];
         }
     }
-
-    void IResolutionContext.Emit(BattleEvent battleEvent) => Emit(battleEvent);
 
     private void RunBattleStart()
     {
@@ -96,8 +96,26 @@ public class Scheduler(Board board) : IResolutionContext
 
         foreach (Unit unit in dead)
         {
+            foreach (Unit contributor in ContributorsTo(unit))
+                Emit(new UnitKillEvent { Source = contributor, Target = unit });
+        }
+
+        foreach (Unit unit in dead)
+        {
             board.Remove(unit);
         }
+    }
+
+    private IReadOnlyList<Unit> ContributorsTo(Unit unit)
+    {
+        return
+        [
+            .. _stepEvents
+                .OfType<UnitHurtEvent>()
+                .Where(hurt => hurt.Target == unit)
+                .Select(hurt => hurt.Source)
+                .Distinct()
+        ];
     }
 
     private void Emit(BattleEvent battleEvent)

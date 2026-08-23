@@ -57,6 +57,28 @@ public class BattleTests
     }
 
     [Fact]
+    public void ChipDamageInAnEarlierTick_EarnsNoKillCredit()
+    {
+        Ability opener = new()
+        {
+            Trigger = new RoundTrigger<StartEvent>(),
+            Effect = new Damage { Value = 1 },
+            Scopes = [new HeadScope { Side = ScopeSide.Enemy, Range = ScopeRange.At(0) }]
+        };
+
+        Unit attacker = new() { Id = 0, Attack = 1, Health = 9, Ability = null };
+        Unit victim = new() { Id = 1, Attack = 0, Health = 3, Ability = null };
+        Unit chipper = new() { Id = 2, Attack = 0, Health = 9, Ability = opener };
+
+        BattleResult result = Battle.Resolve(new Team([attacker, chipper]), new Team([victim]));
+
+        Assert.Contains(result.Events.OfType<UnitHurtEvent>(), hurt => ReferenceEquals(hurt.Source, chipper));
+
+        UnitKillEvent kill = Assert.Single(result.Events.OfType<UnitKillEvent>());
+        Assert.Same(attacker, kill.Source);
+    }
+
+    [Fact]
     public void MutualWipe_EmitsEventsInScheduleOrder()
     {
         Unit player = new() { Id = 0, Attack = 1, Health = 2, Ability = null };
@@ -78,6 +100,8 @@ public class BattleTests
             new UnitHurtEvent { Tick = 2, Subtick = 1, Source = ghost, Target = player, Value = 1 },
             new UnitDeathEvent { Tick = 2, Subtick = 1, Target = player },
             new UnitDeathEvent { Tick = 2, Subtick = 1, Target = ghost },
+            new UnitKillEvent { Tick = 2, Subtick = 1, Source = ghost, Target = player },
+            new UnitKillEvent { Tick = 2, Subtick = 1, Source = player, Target = ghost }
         ];
 
         Assert.Equal(expected, result.Events);
