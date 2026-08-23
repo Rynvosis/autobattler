@@ -10,7 +10,7 @@ public static class Boards
             new Team([Unit(1), Unit(3), Unit(5)]));
 
     public static Unit Unit(int id, Ability? ability = null) =>
-        new() { Id = id, Attack = 1, MaxHealth = 1, Ability = ability };
+        new() { Id = id, Attack = 1, Health = 1, Ability = ability };
 
     public static Unit Find(Board board, int id) =>
         board.UnitsInIterationOrder().First(entry => entry.unit.Id == id).unit;

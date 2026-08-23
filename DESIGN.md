@@ -2,7 +2,7 @@
 
 Backend spec for a monster autobattler with asynchronous matchmaking, inspired by Super Auto Pets.
 
-Monsters have an Attack stat, a Max_Health stat and an Ability.
+Monsters have an Attack stat, a Health stat and an Ability.
 
 - Shop phase: buy monsters, reorder the team, sell monsters back.
 - Battle phase: monsters fight in a queue. Heads attack each tick, abilities react.
@@ -49,7 +49,8 @@ Monsters and undead, drawn as emoji.
 | Slot           | A position in a queue, 0 is the head                        |
 | Content        | The versioned data defining units and abilities             |
 | Ability        | The rules text on a unit. One trigger and one effect        |
-| Trigger        | An event type, and a scope where the event names a unit     |
+| Gold           | The run currency, spent in the shop                         |
+| Trigger        | An event type, and a scope tested against a participant     |
 | Effect         | A change and a scope                                        |
 | Scope          | A set of units, evaluated when its trigger fires            |
 | `self`         | The unit an ability belongs to                              |
@@ -75,7 +76,7 @@ run.
             1. Apply it.
             2. Scan every unit and test its trigger against each event emitted. Queue results into the next subtick.
         2. Mark every unit at or below 0 health as dead.
-        3. Fire on-faint triggers, queuing results into the next subtick.
+        3. Emit a death event per dead unit, then a kill event per contributor, queuing results into the next subtick.
         4. Compact both queues.
         5. Emit this subtick's effects as one batch.
 3. Resolve the outcome.
@@ -84,11 +85,14 @@ run.
 
 - The scheduler is the sole source of `attack`.
 - Health changes accumulate through a subtick and are read once at its boundary.
-- On-faint triggers fire while the unit still holds its slot, before compaction.
+- On-death triggers fire while the unit still holds its slot, before compaction.
+- A contributor is a unit that damaged the dead unit in the same tick.
+- An ability that changes the run returns a delta alongside the outcome.
 - A unit fires triggers until it is compacted off the board.
 - A dead unit stays readable, so its stats still resolve.
 - An effect resolves even if its owner is dead.
 - An effect whose targets are all dead passes silently.
+- An effect that changes the board emits an event.
 - Iteration order is P1, G1, P2, G2, and applies to every scan and application.
 - A battle ends when one side is empty, or in a draw on the tick cap or a mutual wipe.
 - Subticks and ticks are capped. Hitting a cap discards the queue and logs server-side.
@@ -101,7 +105,8 @@ run.
 | `Start`       | Once, before the first attack |                                            |
 | `UnitAttack`  | A head strikes the other head | Attacker, struck unit, damage dealt        |
 | `UnitHurt`    | A unit loses health           | Dealer, damaged unit, damage dealt         |
-| `UnitFaint`   | A unit is marked dead         | Dead unit                                  |
+| `UnitDeath`   | A unit is marked dead         | Dead unit                                  |
+| `UnitKill`    | A unit dies, once per contributor | Contributor, dead unit                 |
 
 - Each event is its own record, carrying its own participants.
 - A unit event names the unit it happened to.
@@ -112,7 +117,8 @@ run.
 
 - A trigger names one event type.
 - A round trigger fires on a round event.
-- A unit trigger fires on a unit event, scoped against the event's unit.
+- A target trigger fires on a unit event, scoped against the unit it happened to.
+- A source trigger fires on a sourced event, scoped against the unit that caused it.
 - Round triggers fire once. Unit triggers fire per matching event.
 - All triggers are combat-scoped. Stage rewards are handler logic.
 
@@ -124,6 +130,7 @@ run.
 - ahead and behind start at the nearest unit
 - event scopes for effects: event.source, event.target, random (count,scopes)
 - ranges index the walk, start inclusive and end exclusive, either bound open
+- a scope filters by unit kind
 - scopes are always handled as arrays, unioned, and resolved in iteration order
 - A trigger walks every unit. An effect walks only living ones
 
@@ -132,11 +139,26 @@ run.
 - An effect's magnitude is a literal or a single field read.
 - Readable: self, event.source, event.value, run state.
 
-## Abilities
+## Units
 
-| Ability | Trigger | Effect |
-|---------|---------|--------|
-| TODO    |         |        |
+A first sketch, written to test the scope language.
+
+Stats are attack and health. A baseline unit is 3/6, moving inversely to the strength of its ability.
+
+| Unit        | Stats | Trigger                | Effect                                 | Icon |
+|-------------|-------|------------------------|----------------------------------------|------|
+| Golem       | 5/10  |                        |                                        | 🗿   |
+| Ghoul       | 2/5   | on-death, target enemy | +2/+2 to self                          | 🧟   |
+| Wyrm        | 2/6   | on-attack, source self | deal `self.attack` to enemy `head[1]`  | 🐉   |
+| Vampire     | 3/7   | on-attack, source self | +1 health to self                      | 🧛   |
+| Goblin      | 2/6   | on-start               | +1/+1 to allies of kind goblin         | 👺   |
+| Devourer    | 3/5   | on-start               | gain ally `ahead[0]` stats, kill it    | 👹   |
+| Wraithblade | 5/3   | on-death, target self  | give `self.attack` to ally `behind[0]` | ⚔️   |
+| Deathcap    | 1/4   | on-death, target self  | kill enemy `head[0]`                   | 🍄   |
+| Necromancer | 3/5   | on-death, target ally  | summon a 1/1 in the dead unit's slot   | 🧙   |
+| Basilisk    | 3/5   | on-attack, source self | enemy `head[0]` skips its next attack  | 🐍   |
+| Coinbug     | 1/4   | on-death, target self  | +1 gold                                | 🪲   |
+| Vulture     | 2/5   | on-kill, source self   | +1 gold                                | 🦅   |
 
 ## Client
 
