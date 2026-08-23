@@ -1,18 +1,17 @@
 using Api.Combat.Events;
-using Api.Combat.Scheduling;
 
-namespace Api.Combat.Abilities;
+namespace Api.Combat.Effects;
 
 public abstract record Effect
 {
-    public abstract void Apply(IBattleContext context, Unit source, IReadOnlyList<Unit> targets);
+    public abstract void Apply(IResolutionContext context, Unit source, IReadOnlyList<Unit> targets);
 }
 
 public sealed record Damage : Effect
 {
     public required int Value { get; init; }
 
-    public override void Apply(IBattleContext context, Unit source, IReadOnlyList<Unit> targets)
+    public override void Apply(IResolutionContext context, Unit source, IReadOnlyList<Unit> targets)
     {
         foreach (Unit target in targets.Where(t => !t.Dead))
         {

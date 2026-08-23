@@ -1,8 +1,8 @@
 using Api.Combat.Events;
 
-namespace Api.Combat.Scheduling;
+namespace Api.Combat.Effects;
 
-public interface IBattleContext
+public interface IResolutionContext
 {
     void Emit(EventKind kind, Unit? source = null, Unit? target = null, int? value = null);
 }
