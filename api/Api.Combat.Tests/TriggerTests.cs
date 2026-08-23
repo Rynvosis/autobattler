@@ -24,7 +24,7 @@ public class TriggerTests
         {
             new UnitTrigger<UnitHurtEvent>
             {
-                Scopes = [new AbsoluteScope { Side = ScopeSide.Ally, Range = ScopeRange.From(0) }]
+                Scopes = [new HeadScope { Side = ScopeSide.Ally, Range = ScopeRange.From(0) }]
             },
             0, board => Hurt(board, 2), true
         },

@@ -85,8 +85,8 @@ run.
 - The scheduler is the sole source of `attack`.
 - Health changes accumulate through a subtick and are read once at its boundary.
 - On-faint triggers fire while the unit still holds its slot, before compaction.
-- A unit stops firing triggers when it dies.
-- A dead unit stays readable, so its stats still resolve. Anything targeting it is dropped.
+- A unit fires triggers until it is compacted off the board.
+- A dead unit stays readable, so its stats still resolve.
 - An effect resolves even if its owner is dead.
 - An effect whose targets are all dead passes silently.
 - Iteration order is P1, G1, P2, G2, and applies to every scan and application.
@@ -103,26 +103,29 @@ run.
 | `UnitHurt`    | A unit loses health           | Dealer, damaged unit, damage dealt         |
 | `UnitFaint`   | A unit is marked dead         | Dead unit                                  |
 
-- Each event is its own record, carrying only the participants it has.
-- Round events name no unit. Unit events name the unit they happened to.
+- Each event is its own record, carrying its own participants.
+- A unit event names the unit it happened to.
 - Every event carries tick and subtick.
 - The log is flat. The client groups by tick and subtick and parses each event by type.
 
 ## Triggers
 
 - A trigger names one event type.
-- A round trigger fires on a round event and carries no scope.
-- A unit trigger fires on a unit event and carries a scope, tested against the event's unit.
+- A round trigger fires on a round event.
+- A unit trigger fires on a unit event, scoped against the event's unit.
 - Round triggers fire once. Unit triggers fire per matching event.
 - All triggers are combat-scoped. Stage rewards are handler logic.
 
 ## Scopes
 
 - Used as "any" in TRIGGERs and "for each" in EFFECTs
-- primary scopes: self, absolute (side,range), relative (scopes,range)
+- Scopes walk units: self, head (side,range), tail (side,range), ahead (range), behind (range)
+- head and tail walk in from an end of a side. ahead and behind walk out from an anchor
+- ahead and behind start at the nearest unit
 - event scopes for effects: event.source, event.target, random (count,scopes)
-- ranges are a start and an end slot, start inclusive and end exclusive, either bound open
+- ranges index the walk, start inclusive and end exclusive, either bound open
 - scopes are always handled as arrays, unioned, and resolved in iteration order
+- A trigger walks every unit. An effect walks only living ones
 
 ## Values
 

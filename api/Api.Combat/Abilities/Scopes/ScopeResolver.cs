@@ -9,11 +9,13 @@ public static class ScopeResolver
 
         foreach (IScope<TContext> scope in scopes) selected.UnionWith(scope.Resolve(context));
 
+        HashSet<Unit> visible = [.. context.Visible(Side.Player), .. context.Visible(Side.Ghost)];
+
         return
         [
             .. context.Board.UnitsInIterationOrder()
                 .Select(entry => entry.unit)
-                .Where(selected.Contains)
+                .Where(unit => selected.Contains(unit) && visible.Contains(unit))
         ];
     }
 }

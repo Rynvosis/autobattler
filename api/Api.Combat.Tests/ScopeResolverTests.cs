@@ -7,8 +7,10 @@ public class ScopeResolverTests
     public static TheoryData<ITriggerScope, int, int[]> TriggerCases => new()
     {
         { new SelfScope(), 0, [0] },
-        { new AbsoluteScope { Side = ScopeSide.Enemy, Range = ScopeRange.At(0) }, 0, [1] },
-        { new TriggerRelativeScope { Range = ScopeRange.At(1) }, 0, [2] },
+        { new HeadScope { Side = ScopeSide.Enemy, Range = ScopeRange.At(0) }, 0, [1] },
+        { new TailScope { Side = ScopeSide.Ally, Range = ScopeRange.At(0) }, 0, [4] },
+        { new TriggerBehindScope { Range = ScopeRange.At(0) }, 0, [2] },
+        { new TriggerAheadScope { Range = ScopeRange.At(0) }, 4, [2] },
     };
 
     [Theory]
@@ -29,9 +31,9 @@ public class ScopeResolverTests
         { new EventSourceScope(), 0, 3, null, [3] },
         { new EventSourceScope(), 0, null, null, [] },
         { new EventTargetScope(), 0, null, 4, [4] },
-        { new EffectRelativeScope { Anchor = new SelfScope(), Range = ScopeRange.At(1) }, 0, null, null, [2] },
-        { new EffectRelativeScope { Anchor = new EventSourceScope(), Range = ScopeRange.At(1) }, 0, 3, null, [5] },
-        { new EffectRelativeScope { Anchor = new EventTargetScope(), Range = ScopeRange.At(-1) }, 0, null, 5, [3] },
+        { new EffectBehindScope { Anchor = new SelfScope(), Range = ScopeRange.At(0) }, 0, null, null, [2] },
+        { new EffectBehindScope { Anchor = new EventSourceScope(), Range = ScopeRange.At(0) }, 0, 3, null, [5] },
+        { new EffectAheadScope { Anchor = new EventTargetScope(), Range = ScopeRange.At(0) }, 0, null, 5, [3] },
     };
 
     [Theory]

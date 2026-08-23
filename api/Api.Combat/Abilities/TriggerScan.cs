@@ -16,10 +16,7 @@ public static class TriggerScan
             if (!ability.Trigger.Matches(battleEvent, new TriggerContext(board, unit))) continue;
 
             IReadOnlyList<Unit> targets =
-            [
-                .. ScopeResolver.Resolve(ability.Scopes, battleEvent.ContextFor(board, unit))
-                    .Where(target => !target.Dead)
-            ];
+                ScopeResolver.Resolve(ability.Scopes, battleEvent.ContextFor(board, unit));
 
             effects.Add(new QueuedEffect
             {

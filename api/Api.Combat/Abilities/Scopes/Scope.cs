@@ -22,55 +22,68 @@ public sealed record SelfScope : IAnyScope, IEffectAnchor
     public IReadOnlyList<Unit> Resolve(TriggerContext context) => [context.Owner];
 }
 
-public sealed record AbsoluteScope : IAnyScope
+public sealed record HeadScope : IAnyScope
 {
     public required ScopeSide Side { get; init; }
     public required ScopeRange Range { get; init; }
 
-    public IReadOnlyList<Unit> Resolve(TriggerContext context)
-    {
-        Side ownerSide = context.Board.PositionOf(context.Owner).Side;
-        Side targetSide = Side == ScopeSide.Ally ? ownerSide : ownerSide.Opposite();
-
-        return Range.Slice(context.Board.Units(targetSide));
-    }
+    public IReadOnlyList<Unit> Resolve(TriggerContext context) =>
+        Range.Slice(context.Visible(Side.SideIn(context)));
 }
 
-public sealed record TriggerRelativeScope : ITriggerScope
+public sealed record TailScope : IAnyScope
+{
+    public required ScopeSide Side { get; init; }
+    public required ScopeRange Range { get; init; }
+
+    public IReadOnlyList<Unit> Resolve(TriggerContext context) =>
+        Range.Slice([.. context.Visible(Side.SideIn(context)).Reverse()]);
+}
+
+public sealed record TriggerAheadScope : ITriggerScope
 {
     public required ScopeRange Range { get; init; }
 
-    public IReadOnlyList<Unit> Resolve(TriggerContext context)
-    {
-        Position owner = context.Board.PositionOf(context.Owner);
-
-        return Range.Slice(context.Board.Units(owner.Side), owner.Slot);
-    }
+    public IReadOnlyList<Unit> Resolve(TriggerContext context) =>
+        Range.Slice(Walk.Ahead(context, context.Owner));
 }
 
-public sealed record EffectRelativeScope : IEffectScope
+public sealed record TriggerBehindScope : ITriggerScope
+{
+    public required ScopeRange Range { get; init; }
+
+    public IReadOnlyList<Unit> Resolve(TriggerContext context) =>
+        Range.Slice(Walk.Behind(context, context.Owner));
+}
+
+public sealed record EffectAheadScope : IEffectScope
 {
     public required IEffectAnchor Anchor { get; init; }
     public required ScopeRange Range { get; init; }
 
-    public IReadOnlyList<Unit> Resolve(EffectContext context)
-    {
-        if (Anchor.Resolve(context) is not [var anchorUnit]) return [];
+    public IReadOnlyList<Unit> Resolve(EffectContext context) =>
+        Anchor.Resolve(context) is [var anchor] ? Range.Slice(Walk.Ahead(context, anchor)) : [];
+}
 
-        Position anchor = context.Board.PositionOf(anchorUnit);
+public sealed record EffectBehindScope : IEffectScope
+{
+    public required IEffectAnchor Anchor { get; init; }
+    public required ScopeRange Range { get; init; }
 
-        return Range.Slice(context.Board.Units(anchor.Side), anchor.Slot);
-    }
+    public IReadOnlyList<Unit> Resolve(EffectContext context) =>
+        Anchor.Resolve(context) is [var anchor] ? Range.Slice(Walk.Behind(context, anchor)) : [];
 }
 
 public sealed record EventSourceScope : IEffectAnchor
 {
-    public IReadOnlyList<Unit> Resolve(EffectContext context) => context.EventSource is { } source ? [source] : [];
+    public IReadOnlyList<Unit> Resolve(EffectContext context) =>
+        context.EventSource is { } source ? [source] : [];
 }
 
 public sealed record EventTargetScope : IEffectAnchor
 {
-    public IReadOnlyList<Unit> Resolve(EffectContext context) => context.EventTarget is { } target ? [target] : [];
+    public IReadOnlyList<Unit> Resolve(EffectContext context) =>
+        context.EventTarget is { } target ? [target] : [];
 }
 
 public sealed record RandomScope : IEffectScope
@@ -78,5 +91,6 @@ public sealed record RandomScope : IEffectScope
     public required int Count { get; init; }
     public required IReadOnlyList<IEffectScope> Scopes { get; init; }
 
-    public IReadOnlyList<Unit> Resolve(EffectContext context) => throw new NotImplementedException("TODO: needs rng seed in context");
+    //todo: needs the battle rng declared and a reference passed into the context
+    public IReadOnlyList<Unit> Resolve(EffectContext context) => throw new NotImplementedException();
 }
