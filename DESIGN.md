@@ -117,7 +117,7 @@ run.
 - Used as "any" in TRIGGERs and "for each" in EFFECTs
 - primary scopes: self, absolute (side,range), relative (scopes,range)
 - event scopes for effects: event.source, event.target, random (count,scopes)
-- ranges are singletons: [0], lists: [0,1], or open ended "..2"
+- ranges are a start and an end slot, start inclusive and end exclusive, either bound open
 - scopes are always handled as arrays, unioned, and resolved in iteration order
 
 ## Values

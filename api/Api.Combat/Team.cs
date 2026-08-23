@@ -12,4 +12,10 @@ public class Team(List<Unit> units)
     public Unit Head => _units[0];
 
     public bool Remove(Unit unit) => _units.Remove(unit);
+
+    public int? IndexOf(Unit unit)
+    {
+        int index = _units.IndexOf(unit);
+        return index >= 0 ? index : null;
+    }
 }

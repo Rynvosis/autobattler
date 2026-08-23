@@ -27,5 +27,17 @@ public class Board(Team player, Team ghost)
         throw new InvalidOperationException($"Unit {unit.Id} is not on the board");
     }
 
+    public Position PositionOf(Unit unit)
+    {
+        return TryFind(Side.Player, player)
+               ?? TryFind(Side.Ghost, ghost)
+               ?? throw new InvalidOperationException($"Unit {unit.Id} is not on the board");
+
+        Position? TryFind(Side side, Team team) =>
+            team.IndexOf(unit) is { } slot ? new Position(side, slot) : null;
+    }
+
+    public IReadOnlyList<Unit> Units(Side side) => TeamFor(side).Units;
+
     private Team TeamFor(Side side) => side == Side.Player ? player : ghost;
 }
