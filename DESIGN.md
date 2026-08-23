@@ -39,31 +39,31 @@ Monsters and undead, drawn as emoji.
 
 ## Terminology
 
-| Term           | Means                                                  |
-|----------------|--------------------------------------------------------|
-| Run            | One playthrough, addressed by an id                    |
-| Stage          | One round: a shop phase, then a battle                 |
-| Unit           | A monster with its own stats                           |
-| Team           | An ordered queue of units                              |
-| Ghost          | A stored snapshot of another player's team             |
-| Slot           | A position in a queue, 0 is the head                   |
-| Content        | The versioned data defining units and abilities        |
-| Ability        | The rules text on a unit. One trigger and one effect   |
-| Trigger        | An event and a scope                                   |
-| Effect         | A change and a scope                                   |
-| Scope          | A set of units, evaluated when its trigger fires       |
-| `self`         | The unit an ability belongs to                         |
-| `event.source` | The unit that caused an event                          |
-| `event.target` | The unit an event happened to                          |
-| Attack         | A head striking the opposing head, queued by the scheduler |
-| Event          | A record of something that happened                    |
-| Tick           | One exchange between the two heads                     |
-| Subtick        | One wave of resolution. One animation batch            |
+| Term           | Means                                                       |
+|----------------|-------------------------------------------------------------|
+| Run            | One playthrough, addressed by an id                         |
+| Stage          | One round: a shop phase, then a battle                      |
+| Unit           | A monster with its own stats                                |
+| Team           | An ordered queue of units                                   |
+| Ghost          | A stored snapshot of another player's team                  |
+| Slot           | A position in a queue, 0 is the head                        |
+| Content        | The versioned data defining units and abilities             |
+| Ability        | The rules text on a unit. One trigger and one effect        |
+| Trigger        | An event and a scope                                        |
+| Effect         | A change and a scope                                        |
+| Scope          | A set of units, evaluated when its trigger fires            |
+| `self`         | The unit an ability belongs to                              |
+| `event.source` | The unit that caused an event                               |
+| `event.target` | The unit an event happened to                               |
+| Attack         | A head striking the opposing head, queued by the scheduler  |
+| Event          | A record of something that happened                         |
+| Tick           | One exchange between the two heads                          |
+| Subtick        | One batch of effects resolved together. One animation batch |
 
 ## Combat
 
-Teams are queues. The two heads fight each other. Combat runs on a copy of both teams; only the outcome goes back to
-the run.
+Teams are queues. The two heads fight each other. Combat runs on a copy of both teams; only the outcome goes back to the
+run.
 
 ### Loop
 
@@ -115,8 +115,8 @@ the run.
 ## Scopes
 
 - Used as "any" in TRIGGERs and "for each" in EFFECTs
-- primary scopes: self, absolute(side,range), relative(scopes,range)
-- event scopes for effects: event.source, event.target, random(count,scopes)
+- primary scopes: self, absolute (side,range), relative (scopes,range)
+- event scopes for effects: event.source, event.target, random (count,scopes)
 - ranges are singletons: [0], lists: [0,1], or open ended "..2"
 - scopes are always handled as arrays, unioned, and resolved in iteration order
 
@@ -156,16 +156,16 @@ the run.
 
 ## API
 
-| Method | Path                      | Does                                                       |
-|--------|---------------------------|------------------------------------------------------------|
-| GET    | `/content`                | The manifest and its version                               |
-| POST   | `/runs`                   | Start a run                                                |
-| GET    | `/runs/{id}`              | The run. Serves resume and resync                          |
-| POST   | `/runs/{id}/battle`       | End the stage: match, resolve, return the log and rewards  |
-| POST   | `/runs/{id}/shop/roll`    | Reroll                                                     |
-| POST   | `/runs/{id}/shop/buy`     | Buy into a team slot                                       |
-| POST   | `/runs/{id}/team/reorder` | Set the queue order                                        |
-| POST   | `/runs/{id}/team/sell`    | Sell for currency                                          |
+| Method | Path                      | Does                                                      |
+|--------|---------------------------|-----------------------------------------------------------|
+| GET    | `/content`                | The manifest and its version                              |
+| POST   | `/runs`                   | Start a run                                               |
+| GET    | `/runs/{id}`              | The run. Serves resume and resync                         |
+| POST   | `/runs/{id}/battle`       | End the stage: match, resolve, return the log and rewards |
+| POST   | `/runs/{id}/shop/roll`    | Reroll                                                    |
+| POST   | `/runs/{id}/shop/buy`     | Buy into a team slot                                      |
+| POST   | `/runs/{id}/team/reorder` | Set the queue order                                       |
+| POST   | `/runs/{id}/team/sell`    | Sell for currency                                         |
 
 - A route group per module. Version and idempotency are filters on the shared parent.
 - The client sends intents, never outcomes.

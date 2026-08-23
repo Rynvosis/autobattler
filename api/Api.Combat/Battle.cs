@@ -10,8 +10,8 @@ public class Battle : IBattleContext
     private readonly Team _player;
     private readonly Team _ghost;
     private readonly List<BattleEvent> _events = [];
-    private List<QueuedEffect> _wave = [];
-    private List<QueuedEffect> _nextWave = [];
+    private List<QueuedEffect> _effectsThisSubtick = [];
+    private List<QueuedEffect> _effectsNextSubtick = [];
     private int _tick;
     private int _subtick;
 
@@ -31,9 +31,9 @@ public class Battle : IBattleContext
     {
         foreach (ScheduleStep step in Schedule())
         {
+            _subtick = 0;
             Execute(step);
-
-            ResolveDeaths();
+            Drain();
 
             if (MaybeOutcome() is { } outcome) return Finish(outcome);
         }
@@ -75,7 +75,6 @@ public class Battle : IBattleContext
     private void RunTick()
     {
         _tick++;
-        _subtick = 0;
         
         Unit playerHead = _player.Head;
         Unit ghostHead = _ghost.Head;
@@ -83,29 +82,37 @@ public class Battle : IBattleContext
         Emit(EventKind.OnUnitAttack, playerHead, ghostHead, playerHead.Attack);
         Emit(EventKind.OnUnitAttack, ghostHead, playerHead, ghostHead.Attack);
 
-        //todo: queue these into the next wave instead of applying them here
-        _subtick++;
-        Damage playerDamage = new()
+        _effectsNextSubtick.Add(new Damage()
         {
             Source = playerHead,
             Targets = [ghostHead],
             Value = playerHead.Attack
-        };
-        playerDamage.Apply(this);
-        Damage ghostDamage = new()
+        });
+        _effectsNextSubtick.Add(new Damage()
         {
             Source = ghostHead,
             Targets = [playerHead],
             Value = ghostHead.Attack
-        };
-        ghostDamage.Apply(this);
+        });
     }
 
     void IBattleContext.Emit(EventKind kind, Unit? source, Unit? target, int? value) =>
         Emit(kind, source, target, value);
 
-    private void RunSubticks()
+    private void Drain()
     {
+        while (_effectsNextSubtick.Count > 0 && _subtick < SubtickCap)
+        {
+            _subtick++;
+            _effectsThisSubtick = _effectsNextSubtick;
+            _effectsNextSubtick = [];
+
+            foreach (QueuedEffect effect in _effectsThisSubtick) effect.Apply(this);
+            ResolveDeaths();
+        }
+
+        _effectsThisSubtick = [];
+        _effectsNextSubtick = [];
     }
 
     private void ResolveDeaths()
