@@ -1,4 +1,4 @@
-namespace Api.Combat;
+namespace Api.Combat.Scheduling;
 
 public enum ScheduleStep
 {

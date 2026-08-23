@@ -1,4 +1,4 @@
-namespace Api.Combat.Events;
+namespace Api.Combat;
 
 public enum BattleOutcome
 {

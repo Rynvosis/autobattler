@@ -1,4 +1,6 @@
+using Api.Combat.Abilities;
 using Api.Combat.Events;
+using Api.Combat.Scheduling;
 
 namespace Api.Combat;
 
@@ -82,17 +84,17 @@ public class Battle : IBattleContext
         Emit(EventKind.OnUnitAttack, playerHead, ghostHead, playerHead.Attack);
         Emit(EventKind.OnUnitAttack, ghostHead, playerHead, ghostHead.Attack);
 
-        _effectsNextSubtick.Add(new Damage()
+        _effectsNextSubtick.Add(new QueuedEffect
         {
+            Effect = new Damage { Value = playerHead.Attack },
             Source = playerHead,
-            Targets = [ghostHead],
-            Value = playerHead.Attack
+            Targets = [ghostHead]
         });
-        _effectsNextSubtick.Add(new Damage()
+        _effectsNextSubtick.Add(new QueuedEffect
         {
+            Effect = new Damage { Value = ghostHead.Attack },
             Source = ghostHead,
-            Targets = [playerHead],
-            Value = ghostHead.Attack
+            Targets = [playerHead]
         });
     }
 
