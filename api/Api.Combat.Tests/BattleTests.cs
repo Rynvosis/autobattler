@@ -1,3 +1,7 @@
+using Api.Combat.Abilities;
+using Api.Combat.Abilities.Scopes;
+using Api.Combat.Effects;
+
 namespace Api.Combat.Tests;
 
 public class BattleTests
@@ -12,8 +16,8 @@ public class BattleTests
     public void OneVersusOne_ReturnsExpectedOutcome(int playerAttack, int playerHealth, int ghostAttack, int ghostHealth,
         BattleOutcome expected)
     {
-        Unit player = new() { Id = 0, Attack = playerAttack, MaxHealth = playerHealth };
-        Unit ghost = new() { Id = 1, Attack = ghostAttack, MaxHealth = ghostHealth };
+        Unit player = new() { Id = 0, Attack = playerAttack, MaxHealth = playerHealth, Ability = null };
+        Unit ghost = new() { Id = 1, Attack = ghostAttack, MaxHealth = ghostHealth, Ability = null };
 
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
 
@@ -23,9 +27,9 @@ public class BattleTests
     [Fact]
     public void TwoVersusOne_GhostSurvives_ReturnsLoss()
     {
-        Unit player1 = new() { Id = 0, Attack = 1, MaxHealth = 2 };
-        Unit player2 = new() { Id = 1, Attack = 1, MaxHealth = 2 };
-        Unit ghost = new() { Id = 2, Attack = 2, MaxHealth = 3 };
+        Unit player1 = new() { Id = 0, Attack = 1, MaxHealth = 2, Ability = null };
+        Unit player2 = new() { Id = 1, Attack = 1, MaxHealth = 2, Ability = null };
+        Unit ghost = new() { Id = 2, Attack = 2, MaxHealth = 3, Ability = null };
 
         BattleResult result = Battle.Resolve(new Team([player1, player2]), new Team([ghost]));
 
@@ -34,30 +38,48 @@ public class BattleTests
 
 
     [Fact]
+    public void GhostRetaliatesOnHurt_ReturnsDraw()
+    {
+        Ability retaliate = new()
+        {
+            Trigger = new UnitTrigger<UnitHurtEvent> { Scopes = [new SelfScope()] },
+            Effect = new Damage { Value = 1 },
+            Scopes = [new EventSourceScope()]
+        };
+
+        Unit player = new() { Id = 0, Attack = 2, MaxHealth = 2, Ability = null };
+        Unit ghost = new() { Id = 1, Attack = 1, MaxHealth = 2, Ability = retaliate };
+
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
+
+        Assert.Equal(BattleOutcome.Draw, result.Outcome);
+    }
+
+    [Fact]
     public void MutualWipe_EmitsEventsInScheduleOrder()
     {
-        
-        Unit player = new() { Id = 0, Attack = 1, MaxHealth = 2 };
-        Unit ghost = new() { Id = 1, Attack = 1, MaxHealth = 2 };
+
+        Unit player = new() { Id = 0, Attack = 1, MaxHealth = 2, Ability = null };
+        Unit ghost = new() { Id = 1, Attack = 1, MaxHealth = 2, Ability = null };
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
-        
+
         BattleEvent[] expected =
         [
-            new() { Kind = EventKind.OnStart, Tick = 0, Subtick = 0 },
+            new StartEvent { Tick = 0, Subtick = 0 },
 
-            new() { Kind = EventKind.OnUnitAttack, Tick = 1, Subtick = 0, Source = player.Id, Target = ghost.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitAttack, Tick = 1, Subtick = 0, Source = ghost.Id, Target = player.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitHurt,   Tick = 1, Subtick = 1, Source = player.Id, Target = ghost.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitHurt,   Tick = 1, Subtick = 1, Source = ghost.Id, Target = player.Id, Value = 1 },
+            new UnitAttackEvent { Tick = 1, Subtick = 0, Source = player, Target = ghost, Value = 1 },
+            new UnitAttackEvent { Tick = 1, Subtick = 0, Source = ghost, Target = player, Value = 1 },
+            new UnitHurtEvent { Tick = 1, Subtick = 1, Source = player, Target = ghost, Value = 1 },
+            new UnitHurtEvent { Tick = 1, Subtick = 1, Source = ghost, Target = player, Value = 1 },
 
-            new() { Kind = EventKind.OnUnitAttack, Tick = 2, Subtick = 0, Source = player.Id, Target = ghost.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitAttack, Tick = 2, Subtick = 0, Source = ghost.Id, Target = player.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitHurt,   Tick = 2, Subtick = 1, Source = player.Id, Target = ghost.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitHurt,   Tick = 2, Subtick = 1, Source = ghost.Id, Target = player.Id, Value = 1 },
-            new() { Kind = EventKind.OnUnitFaint,  Tick = 2, Subtick = 1, Target = player.Id },
-            new() { Kind = EventKind.OnUnitFaint,  Tick = 2, Subtick = 1, Target = ghost.Id },
+            new UnitAttackEvent { Tick = 2, Subtick = 0, Source = player, Target = ghost, Value = 1 },
+            new UnitAttackEvent { Tick = 2, Subtick = 0, Source = ghost, Target = player, Value = 1 },
+            new UnitHurtEvent { Tick = 2, Subtick = 1, Source = player, Target = ghost, Value = 1 },
+            new UnitHurtEvent { Tick = 2, Subtick = 1, Source = ghost, Target = player, Value = 1 },
+            new UnitFaintEvent { Tick = 2, Subtick = 1, Target = player },
+            new UnitFaintEvent { Tick = 2, Subtick = 1, Target = ghost },
         ];
-        
+
         Assert.Equal(expected, result.Events);
     }
 }

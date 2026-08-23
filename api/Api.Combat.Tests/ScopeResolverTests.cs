@@ -4,18 +4,6 @@ namespace Api.Combat.Tests;
 
 public class ScopeResolverTests
 {
-    private static Board ThreeVersusThree() =>
-        new(
-            new Team([Unit(0), Unit(2), Unit(4)]),
-            new Team([Unit(1), Unit(3), Unit(5)]));
-
-    private static Unit Unit(int id) => new() { Id = id, Attack = 1, MaxHealth = 1 };
-
-    private static Unit Find(Board board, int id) =>
-        board.UnitsInIterationOrder().First(entry => entry.unit.Id == id).unit;
-
-    private static Unit? FindOrNull(Board board, int? id) => id is { } value ? Find(board, value) : null;
-
     public static TheoryData<ITriggerScope, int, int[]> TriggerCases => new()
     {
         { new SelfScope(), 0, [0] },
@@ -27,8 +15,8 @@ public class ScopeResolverTests
     [MemberData(nameof(TriggerCases))]
     public void ResolveInTriggerContext_ReturnsExpectedUnits(ITriggerScope scope, int ownerId, int[] expected)
     {
-        Board board = ThreeVersusThree();
-        TriggerContext context = new(board, Find(board, ownerId));
+        Board board = Boards.ThreeVersusThree();
+        TriggerContext context = new(board, Boards.Find(board, ownerId));
 
         IReadOnlyList<Unit> resolved = scope.Resolve(context);
 
@@ -55,12 +43,12 @@ public class ScopeResolverTests
         int? targetId,
         int[] expected)
     {
-        Board board = ThreeVersusThree();
+        Board board = Boards.ThreeVersusThree();
         EffectContext context = new(
             board,
-            Find(board, ownerId),
-            FindOrNull(board, sourceId),
-            FindOrNull(board, targetId));
+            Boards.Find(board, ownerId),
+            Boards.FindOrNull(board, sourceId),
+            Boards.FindOrNull(board, targetId));
 
         IReadOnlyList<Unit> resolved = scope.Resolve(context);
 

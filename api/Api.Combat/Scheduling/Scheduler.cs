@@ -1,3 +1,4 @@
+using Api.Combat.Abilities;
 using Api.Combat.Effects;
 using Api.Combat.Events;
 
@@ -99,6 +100,9 @@ public class Scheduler(Board board) : IResolutionContext
         }
     }
 
-    private void Emit(BattleEvent battleEvent) =>
+    private void Emit(BattleEvent battleEvent)
+    {
         _stepEvents.Add(battleEvent with { Tick = _tick, Subtick = _subtick });
+        _effectsNextSubtick.AddRange(TriggerScan.Scan(board, battleEvent));
+    }
 }
