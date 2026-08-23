@@ -20,22 +20,23 @@ public abstract record UnitEvent : BattleEvent
     public override EffectContext ContextFor(Board board, Unit owner) => new(board, owner, null, Target);
 }
 
-public sealed record StartEvent : RoundEvent;
-
-public sealed record UnitAttackEvent : UnitEvent
+public abstract record SourcedUnitEvent : UnitEvent
 {
     public required Unit Source { get; init; }
-    public required int Value { get; init; }
 
     public override EffectContext ContextFor(Board board, Unit owner) => new(board, owner, Source, Target);
 }
 
-public sealed record UnitHurtEvent : UnitEvent
-{
-    public required Unit Source { get; init; }
-    public required int Value { get; init; }
+public sealed record StartEvent : RoundEvent;
 
-    public override EffectContext ContextFor(Board board, Unit owner) => new(board, owner, Source, Target);
+public sealed record UnitAttackEvent : SourcedUnitEvent
+{
+    public required int Value { get; init; }
+}
+
+public sealed record UnitHurtEvent : SourcedUnitEvent
+{
+    public required int Value { get; init; }
 }
 
 public sealed record UnitDeathEvent : UnitEvent;

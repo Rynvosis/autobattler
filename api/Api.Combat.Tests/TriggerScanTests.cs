@@ -1,7 +1,6 @@
 using Api.Combat.Abilities;
 using Api.Combat.Abilities.Scopes;
 using Api.Combat.Effects;
-using Api.Combat.Events;
 
 namespace Api.Combat.Tests;
 
@@ -10,7 +9,7 @@ public class TriggerScanTests
     private static Ability Retaliate() =>
         new()
         {
-            Trigger = new UnitTrigger<UnitHurtEvent> { Scopes = [new SelfScope()] },
+            Trigger = new TargetTrigger<UnitHurtEvent> { Scopes = [new SelfScope()] },
             Effect = new Damage { Value = 1 },
             Scopes = [new EventSourceScope()]
         };

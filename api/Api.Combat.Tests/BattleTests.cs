@@ -13,7 +13,8 @@ public class BattleTests
     [InlineData(1, 2, 1, 1, BattleOutcome.Win)]
     [InlineData(3, 1, 0, 2, BattleOutcome.Win)]
     [InlineData(1, 1, 1, 2, BattleOutcome.Loss)]
-    public void OneVersusOne_ReturnsExpectedOutcome(int playerAttack, int playerHealth, int ghostAttack, int ghostHealth,
+    public void OneVersusOne_ReturnsExpectedOutcome(int playerAttack, int playerHealth, int ghostAttack,
+        int ghostHealth,
         BattleOutcome expected)
     {
         Unit player = new() { Id = 0, Attack = playerAttack, Health = playerHealth, Ability = null };
@@ -42,7 +43,7 @@ public class BattleTests
     {
         Ability retaliate = new()
         {
-            Trigger = new UnitTrigger<UnitHurtEvent> { Scopes = [new SelfScope()] },
+            Trigger = new TargetTrigger<UnitHurtEvent> { Scopes = [new SelfScope()] },
             Effect = new Damage { Value = 1 },
             Scopes = [new EventSourceScope()]
         };
@@ -58,7 +59,6 @@ public class BattleTests
     [Fact]
     public void MutualWipe_EmitsEventsInScheduleOrder()
     {
-
         Unit player = new() { Id = 0, Attack = 1, Health = 2, Ability = null };
         Unit ghost = new() { Id = 1, Attack = 1, Health = 2, Ability = null };
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
