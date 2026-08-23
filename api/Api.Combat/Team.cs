@@ -1,10 +1,8 @@
 namespace Api.Combat;
 
-public class Team
+public class Team(List<Unit> units)
 {
-    private readonly List<Unit> _units;
-
-    public Team(List<Unit> units) => _units = [.. units];
+    private readonly List<Unit> _units = [.. units];
 
     public IReadOnlyList<Unit> Units => _units;
 
@@ -13,5 +11,5 @@ public class Team
 
     public Unit Head => _units[0];
 
-    public void Remove(Unit unit) => _units.Remove(unit);
+    public bool Remove(Unit unit) => _units.Remove(unit);
 }

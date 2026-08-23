@@ -20,7 +20,12 @@ public class Board(Team player, Team ghost)
         return result;
     }
 
-    public void Remove(Side side, Unit unit) => TeamFor(side).Remove(unit);
+    public void Remove(Unit unit)
+    {
+        if (player.Remove(unit) || ghost.Remove(unit)) return;
+
+        throw new InvalidOperationException($"Unit {unit.Id} is not on the board");
+    }
 
     private Team TeamFor(Side side) => side == Side.Player ? player : ghost;
 }

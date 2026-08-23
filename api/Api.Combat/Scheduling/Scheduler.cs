@@ -80,19 +80,23 @@ public class Scheduler(Board board) : IResolutionContext
 
     private void ResolveDeaths()
     {
-        List<(Unit unit, Position position)> dead = [];
+        List<Unit> dead = [];
 
-        foreach ((Unit unit, Position position) in board.UnitsInIterationOrder())
+        foreach ((Unit unit, Position _) in board.UnitsInIterationOrder())
         {
             if (unit.Health > 0) continue;
             unit.Dead = true;
-            dead.Add((unit, position));
+            dead.Add(unit);
         }
 
-        foreach ((Unit unit, Position position) in dead)
+        foreach (Unit unit in dead)
         {
             Emit(EventKind.OnUnitFaint, target: unit);
-            board.Remove(position.Side, unit);
+        }
+
+        foreach (Unit unit in dead)
+        {
+            board.Remove(unit);
         }
     }
 
