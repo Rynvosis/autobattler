@@ -38,4 +38,4 @@ public sealed record UnitHurtEvent : UnitEvent
     public override EffectContext ContextFor(Board board, Unit owner) => new(board, owner, Source, Target);
 }
 
-public sealed record UnitFaintEvent : UnitEvent;
+public sealed record UnitDeathEvent : UnitEvent;

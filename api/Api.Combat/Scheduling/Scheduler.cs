@@ -91,7 +91,7 @@ public class Scheduler(Board board) : IResolutionContext
 
         foreach (Unit unit in dead)
         {
-            Emit(new UnitFaintEvent { Target = unit });
+            Emit(new UnitDeathEvent { Target = unit });
         }
 
         foreach (Unit unit in dead)

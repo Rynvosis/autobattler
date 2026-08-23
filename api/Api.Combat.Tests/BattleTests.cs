@@ -16,8 +16,8 @@ public class BattleTests
     public void OneVersusOne_ReturnsExpectedOutcome(int playerAttack, int playerHealth, int ghostAttack, int ghostHealth,
         BattleOutcome expected)
     {
-        Unit player = new() { Id = 0, Attack = playerAttack, MaxHealth = playerHealth, Ability = null };
-        Unit ghost = new() { Id = 1, Attack = ghostAttack, MaxHealth = ghostHealth, Ability = null };
+        Unit player = new() { Id = 0, Attack = playerAttack, Health = playerHealth, Ability = null };
+        Unit ghost = new() { Id = 1, Attack = ghostAttack, Health = ghostHealth, Ability = null };
 
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
 
@@ -27,9 +27,9 @@ public class BattleTests
     [Fact]
     public void TwoVersusOne_GhostSurvives_ReturnsLoss()
     {
-        Unit player1 = new() { Id = 0, Attack = 1, MaxHealth = 2, Ability = null };
-        Unit player2 = new() { Id = 1, Attack = 1, MaxHealth = 2, Ability = null };
-        Unit ghost = new() { Id = 2, Attack = 2, MaxHealth = 3, Ability = null };
+        Unit player1 = new() { Id = 0, Attack = 1, Health = 2, Ability = null };
+        Unit player2 = new() { Id = 1, Attack = 1, Health = 2, Ability = null };
+        Unit ghost = new() { Id = 2, Attack = 2, Health = 3, Ability = null };
 
         BattleResult result = Battle.Resolve(new Team([player1, player2]), new Team([ghost]));
 
@@ -47,8 +47,8 @@ public class BattleTests
             Scopes = [new EventSourceScope()]
         };
 
-        Unit player = new() { Id = 0, Attack = 2, MaxHealth = 2, Ability = null };
-        Unit ghost = new() { Id = 1, Attack = 1, MaxHealth = 2, Ability = retaliate };
+        Unit player = new() { Id = 0, Attack = 2, Health = 2, Ability = null };
+        Unit ghost = new() { Id = 1, Attack = 1, Health = 2, Ability = retaliate };
 
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
 
@@ -59,8 +59,8 @@ public class BattleTests
     public void MutualWipe_EmitsEventsInScheduleOrder()
     {
 
-        Unit player = new() { Id = 0, Attack = 1, MaxHealth = 2, Ability = null };
-        Unit ghost = new() { Id = 1, Attack = 1, MaxHealth = 2, Ability = null };
+        Unit player = new() { Id = 0, Attack = 1, Health = 2, Ability = null };
+        Unit ghost = new() { Id = 1, Attack = 1, Health = 2, Ability = null };
         BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
 
         BattleEvent[] expected =
@@ -76,8 +76,8 @@ public class BattleTests
             new UnitAttackEvent { Tick = 2, Subtick = 0, Source = ghost, Target = player, Value = 1 },
             new UnitHurtEvent { Tick = 2, Subtick = 1, Source = player, Target = ghost, Value = 1 },
             new UnitHurtEvent { Tick = 2, Subtick = 1, Source = ghost, Target = player, Value = 1 },
-            new UnitFaintEvent { Tick = 2, Subtick = 1, Target = player },
-            new UnitFaintEvent { Tick = 2, Subtick = 1, Target = ghost },
+            new UnitDeathEvent { Tick = 2, Subtick = 1, Target = player },
+            new UnitDeathEvent { Tick = 2, Subtick = 1, Target = ghost },
         ];
 
         Assert.Equal(expected, result.Events);
