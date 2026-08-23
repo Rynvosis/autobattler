@@ -18,7 +18,7 @@ public sealed record Damage : Effect
             target.Health -= Value;
             if (Value > 0)
             {
-                context.Emit(EventKind.OnUnitHurt, source, target, Value);
+                context.Emit(new UnitHurtEvent { Source = source, Target = target, Value = Value });
             }
         }
     }

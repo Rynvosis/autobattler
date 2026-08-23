@@ -49,7 +49,7 @@ Monsters and undead, drawn as emoji.
 | Slot           | A position in a queue, 0 is the head                        |
 | Content        | The versioned data defining units and abilities             |
 | Ability        | The rules text on a unit. One trigger and one effect        |
-| Trigger        | An event and a scope                                        |
+| Trigger        | An event type, and a scope where the event names a unit     |
 | Effect         | A change and a scope                                        |
 | Scope          | A set of units, evaluated when its trigger fires            |
 | `self`         | The unit an ability belongs to                              |
@@ -73,7 +73,7 @@ run.
     2. **Subtick** — repeat until the queue is empty or the subtick cap is reached:
         1. For each effect in the queue, in order:
             1. Apply it.
-            2. Scan every unit and test its triggers against this effect. Queue results into the next subtick.
+            2. Scan every unit and test its trigger against each event emitted. Queue results into the next subtick.
         2. Mark every unit at or below 0 health as dead.
         3. Fire on-faint triggers, queuing results into the next subtick.
         4. Compact both queues.
@@ -96,19 +96,23 @@ run.
 
 ## Events
 
-| Event          | Emitted when                  | source   | target       | value        |
-|----------------|-------------------------------|----------|--------------|--------------|
-| `OnStart`      | Once, before the first attack | -        | -            | -            |
-| `OnUnitAttack` | An `attack` effect resolves   | Attacker | Struck unit  | Damage dealt |
-| `OnUnitHurt`   | A unit takes damage           | Dealer   | Damaged unit | Damage dealt |
-| `OnUnitFaint`  | A unit is marked dead         | -        | Dead unit    | -            |
+| Event         | Emitted when                  | Carries                                    |
+|---------------|-------------------------------|--------------------------------------------|
+| `Start`       | Once, before the first attack |                                            |
+| `UnitAttack`  | A head strikes the other head | Attacker, struck unit, damage dealt        |
+| `UnitHurt`    | A unit loses health           | Dealer, damaged unit, damage dealt         |
+| `UnitFaint`   | A unit is marked dead         | Dead unit                                  |
 
-- Records carry tick, subtick, and the ids of source and target.
-- The log is flat. The client groups by tick and subtick.
+- Each event is its own record, carrying only the participants it has.
+- Round events name no unit. Unit events name the unit they happened to.
+- Every event carries tick and subtick.
+- The log is flat. The client groups by tick and subtick and parses each event by type.
 
 ## Triggers
 
-- A trigger is an event and a scope.
+- A trigger names one event type.
+- A round trigger fires on a round event and carries no scope.
+- A unit trigger fires on a unit event and carries a scope, tested against the event's unit.
 - Round triggers fire once. Unit triggers fire per matching event.
 - All triggers are combat-scoped. Stage rewards are handler logic.
 

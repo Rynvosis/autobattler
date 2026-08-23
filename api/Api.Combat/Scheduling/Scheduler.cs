@@ -30,12 +30,11 @@ public class Scheduler(Board board) : IResolutionContext
         }
     }
 
-    void IResolutionContext.Emit(EventKind kind, Unit? source, Unit? target, int? value) =>
-        Emit(kind, source, target, value);
+    void IResolutionContext.Emit(BattleEvent battleEvent) => Emit(battleEvent);
 
     private void RunBattleStart()
     {
-        Emit(EventKind.OnStart);
+        Emit(new StartEvent());
     }
 
     private void RunTick()
@@ -45,8 +44,8 @@ public class Scheduler(Board board) : IResolutionContext
 
         (Unit playerHead, Unit ghostHead) = board.Heads();
 
-        Emit(EventKind.OnUnitAttack, playerHead, ghostHead, playerHead.Attack);
-        Emit(EventKind.OnUnitAttack, ghostHead, playerHead, ghostHead.Attack);
+        Emit(new UnitAttackEvent { Source = playerHead, Target = ghostHead, Value = playerHead.Attack });
+        Emit(new UnitAttackEvent { Source = ghostHead, Target = playerHead, Value = ghostHead.Attack });
 
         _effectsNextSubtick.Add(new QueuedEffect
         {
@@ -91,7 +90,7 @@ public class Scheduler(Board board) : IResolutionContext
 
         foreach (Unit unit in dead)
         {
-            Emit(EventKind.OnUnitFaint, target: unit);
+            Emit(new UnitFaintEvent { Target = unit });
         }
 
         foreach (Unit unit in dead)
@@ -100,14 +99,6 @@ public class Scheduler(Board board) : IResolutionContext
         }
     }
 
-    private void Emit(EventKind kind, Unit? source = null, Unit? target = null, int? value = null) =>
-        _stepEvents.Add(new BattleEvent
-        {
-            Kind = kind,
-            Tick = _tick,
-            Subtick = _subtick,
-            Source = source?.Id,
-            Target = target?.Id,
-            Value = value,
-        });
+    private void Emit(BattleEvent battleEvent) =>
+        _stepEvents.Add(battleEvent with { Tick = _tick, Subtick = _subtick });
 }
