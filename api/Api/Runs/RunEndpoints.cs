@@ -8,6 +8,8 @@ namespace Api.Runs;
 
 public static class RunEndpoints
 {
+    private const int RunLifetimeHours = 48;
+
     public static void MapRuns(this WebApplication app)
     {
         app.MapPost("/runs", CreateRun);
@@ -45,7 +47,39 @@ public static class RunEndpoints
         return Results.Ok(result);
     }
 
-    private static Run StartRun(string runId) => throw new NotImplementedException();
+    private static Run StartRun(string runId)
+    {
+        return new Run
+        {
+            RunId = runId,
+            Version = 1,
+            Victories = 0,
+            Gold = Economy.StartingGold,
+            Stage = 1,
+            ExpiresAt = DateTimeOffset.UtcNow.AddHours(RunLifetimeHours),
+            Units = StartingTeam()
+        };
+    }
+
+    // TODO: the shop fills a team. Until it exists, a run starts with a fixed one.
+    private static IReadOnlyList<TeamUnit> StartingTeam()
+    {
+        return
+        [
+            UnitOf(Monsters.Golem),
+            UnitOf(Monsters.Goblin)
+        ];
+    }
+
+    private static TeamUnit UnitOf(UnitDefinition definition)
+    {
+        return new TeamUnit
+        {
+            Kind = definition.Kind,
+            Attack = definition.Attack,
+            Health = definition.Health
+        };
+    }
 
     // TODO: the opponent when the stage holds no ghost.
     private static Task<Team> FindGhostTeamAsync(GhostStore ghosts, Run run, CancellationToken cancellationToken) =>

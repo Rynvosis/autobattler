@@ -41,6 +41,7 @@ public sealed class RunStoreTests : IAsyncLifetime
         {
             RunId = "test-run-123",
             Version = 1,
+            Victories = 2,
             Gold = 10,
             Stage = 1,
             ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(1787769654),
