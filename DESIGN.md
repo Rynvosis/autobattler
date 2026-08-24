@@ -139,7 +139,7 @@ run.
 ## Values
 
 - An effect's magnitude is a literal or a single field read.
-- Readable: self, event.source, event.value, run state.
+- Readable: a stat of self, of the unit applied to, or of a participant of the event.
 
 ## Units
 

@@ -4,7 +4,7 @@ using Api.Combat.Events;
 
 namespace Api.Combat.Scheduling;
 
-public class Scheduler(Board board) : IResolutionContext
+public class Scheduler(Board board)
 {
     private const int TickCap = 64;
     private const int SubtickCap = 32;
@@ -14,8 +14,6 @@ public class Scheduler(Board board) : IResolutionContext
     private List<QueuedEffect> _effectsThisSubtick = [];
     private int _subtick;
     private int _tick;
-
-    void IResolutionContext.Emit(BattleEvent battleEvent) => Emit(battleEvent);
 
     public IEnumerable<IReadOnlyList<BattleEvent>> Steps()
     {
@@ -45,21 +43,27 @@ public class Scheduler(Board board) : IResolutionContext
 
         (Unit playerHead, Unit ghostHead) = board.Heads();
 
-        Emit(new UnitAttackEvent { Source = playerHead, Target = ghostHead, Value = playerHead.Attack });
-        Emit(new UnitAttackEvent { Source = ghostHead, Target = playerHead, Value = ghostHead.Attack });
+        UnitAttackEvent playerStrike = new() { Source = playerHead, Target = ghostHead, Value = playerHead.Attack };
+        UnitAttackEvent ghostStrike = new() { Source = ghostHead, Target = playerHead, Value = ghostHead.Attack };
 
-        _effectsNextSubtick.Add(new QueuedEffect
+        Emit(playerStrike);
+        Emit(ghostStrike);
+
+        _effectsNextSubtick.Add(Strike(playerStrike));
+        _effectsNextSubtick.Add(Strike(ghostStrike));
+
+        return;
+
+        QueuedEffect Strike(UnitAttackEvent strike)
         {
-            Effect = new Damage { Value = playerHead.Attack },
-            Source = playerHead,
-            Targets = [ghostHead]
-        });
-        _effectsNextSubtick.Add(new QueuedEffect
-        {
-            Effect = new Damage { Value = ghostHead.Attack },
-            Source = ghostHead,
-            Targets = [playerHead]
-        });
+            return new QueuedEffect<UnitAttackEvent>
+            {
+                Effect = new Damage<UnitAttackEvent> { Value = Literal.Of(strike.Value) },
+                Event = strike,
+                Context = new Context(board, strike.Source),
+                Targets = [strike.Target]
+            };
+        }
     }
 
     private void Drain()
@@ -70,7 +74,11 @@ public class Scheduler(Board board) : IResolutionContext
             _effectsThisSubtick = _effectsNextSubtick;
             _effectsNextSubtick = [];
 
-            foreach (QueuedEffect effect in _effectsThisSubtick) effect.Apply(this);
+            foreach (QueuedEffect effect in _effectsThisSubtick)
+            {
+                foreach (BattleEvent battleEvent in effect.Apply()) Emit(battleEvent);
+            }
+
             ResolveDeaths();
         }
 

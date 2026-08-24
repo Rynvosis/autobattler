@@ -1,21 +1,31 @@
+using Api.Combat.Events;
+
 namespace Api.Combat.Abilities.Scopes;
 
 public static class ScopeResolver
 {
-    public static IReadOnlyList<Unit> Resolve<TContext>(IReadOnlyList<IScope<TContext>> scopes, TContext context)
-        where TContext : TriggerContext
+    public static IReadOnlyList<Unit> Resolve(IReadOnlyList<ITriggerScope> scopes, Context context)
     {
-        HashSet<Unit> selected = [];
+        return [.. InBoardOrder(context, scopes.SelectMany(scope => scope.Resolve(context)))];
+    }
 
-        foreach (IScope<TContext> scope in scopes) selected.UnionWith(scope.Resolve(context));
-
-        HashSet<Unit> visible = [.. context.Visible(Side.Player), .. context.Visible(Side.Ghost)];
-
+    public static IReadOnlyList<Unit> Resolve<TEvent>(
+        IReadOnlyList<IEffectScope<TEvent>> scopes,
+        Context context,
+        TEvent battleEvent)
+        where TEvent : BattleEvent
+    {
         return
         [
-            .. context.Board.UnitsInIterationOrder()
-                .Select(entry => entry.unit)
-                .Where(unit => selected.Contains(unit) && visible.Contains(unit))
+            .. InBoardOrder(context, scopes.SelectMany(scope => scope.Resolve(context, battleEvent)))
+                .Where(unit => !unit.Dead)
         ];
+    }
+
+    private static IEnumerable<Unit> InBoardOrder(Context context, IEnumerable<Unit> units)
+    {
+        HashSet<Unit> selected = [.. units];
+
+        return context.Board.UnitsInIterationOrder().Select(entry => entry.unit).Where(selected.Contains);
     }
 }

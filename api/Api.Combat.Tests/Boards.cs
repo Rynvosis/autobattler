@@ -1,4 +1,6 @@
 using Api.Combat.Abilities;
+using Api.Combat.Abilities.Scopes;
+using Api.Combat.Effects;
 
 namespace Api.Combat.Tests;
 
@@ -15,5 +17,18 @@ public static class Boards
     public static Unit Find(Board board, int id) =>
         board.UnitsInIterationOrder().First(entry => entry.unit.Id == id).unit;
 
-    public static Unit? FindOrNull(Board board, int? id) => id is { } value ? Find(board, value) : null;
+    public static UnitHurtEvent HurtEvent(Board board, int sourceId, int targetId)
+    {
+        return new UnitHurtEvent { Source = Find(board, sourceId), Target = Find(board, targetId), Value = 1 };
+    }
+
+    public static Ability Retaliate()
+    {
+        return new Ability<UnitHurtEvent>
+        {
+            Trigger = new UnitTrigger<UnitHurtEvent> { Participant = new EventTarget(), Scopes = [new SelfScope()] },
+            Effect = new Damage<UnitHurtEvent> { Value = Literal.Of(1) },
+            Scopes = [new ParticipantScope<UnitHurtEvent> { Participant = new EventSource() }]
+        };
+    }
 }
