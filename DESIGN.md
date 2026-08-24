@@ -100,13 +100,15 @@ run.
 
 ## Events
 
-| Event         | Emitted when                  | Carries                                    |
-|---------------|-------------------------------|--------------------------------------------|
-| `Start`       | Once, before the first attack |                                            |
-| `UnitAttack`  | A head strikes the other head | Attacker, struck unit, damage dealt        |
-| `UnitHurt`    | A unit loses health           | Dealer, damaged unit, damage dealt         |
-| `UnitDeath`   | A unit is marked dead         | Dead unit                                  |
-| `UnitKill`    | A unit dies, once per contributor | Contributor, dead unit                 |
+| Event              | Emitted when                      | Carries                             |
+|--------------------|-----------------------------------|-------------------------------------|
+| `Start`            | Once, before the first attack     |                                     |
+| `UnitAttack`       | A head strikes the other head     | Attacker, struck unit, damage dealt |
+| `UnitHurt`         | A unit loses health               | Dealer, damaged unit, damage dealt  |
+| `UnitAttackChange` | A unit's attack stat changes      | Changer, changed unit, delta        |
+| `UnitHealthChange` | A unit's health stat changes      | Changer, changed unit, delta        |
+| `UnitDeath`        | A unit is marked dead             | Dead unit                           |
+| `UnitKill`         | A unit dies, once per contributor | Contributor, dead unit              |
 
 - Each event is its own record, carrying its own participants.
 - A unit event names the unit it happened to.

@@ -39,6 +39,16 @@ public sealed record UnitHurtEvent : SourcedUnitEvent
     public required int Value { get; init; }
 }
 
+public sealed record UnitAttackChangeEvent : SourcedUnitEvent
+{
+    public required int Value { get; init; }
+}
+
+public sealed record UnitHealthChangeEvent : SourcedUnitEvent
+{
+    public required int Value { get; init; }
+}
+
 public sealed record UnitDeathEvent : UnitEvent;
 
 public sealed record UnitKillEvent : SourcedUnitEvent;

@@ -23,3 +23,24 @@ public sealed record Damage : Effect
         }
     }
 }
+
+public sealed record StatChange : Effect
+{
+    public required int Attack { get; init; }
+    public required int Health { get; init; }
+
+    public override void Apply(IResolutionContext context, Unit source, IReadOnlyList<Unit> targets)
+    {
+        foreach (Unit target in targets.Where(t => !t.Dead))
+        {
+            target.Attack += Attack;
+            target.Health += Health;
+
+            if (Attack != 0)
+                context.Emit(new UnitAttackChangeEvent { Source = source, Target = target, Value = Attack });
+
+            if (Health != 0)
+                context.Emit(new UnitHealthChangeEvent { Source = source, Target = target, Value = Health });
+        }
+    }
+}
