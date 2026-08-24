@@ -44,6 +44,7 @@ Monsters and undead, drawn as emoji.
 | Run            | One playthrough, addressed by an id                            |
 | Stage          | One round: a shop phase, then a battle                         |
 | Unit           | A monster with its own stats                                   |
+| Monster        | The content-level unit of this game. Unit is flavour-agnostic  |
 | Kind           | The id of a unit's definition, shared by every unit of it      |
 | Team           | An ordered queue of units                                      |
 | Ghost          | A stored snapshot of another player's team                     |
@@ -154,12 +155,12 @@ Stats are attack and health. A baseline unit is 3/6, moving inversely to the str
 | Ghoul       | 2/5   | on-death, target enemy | +2/+2 to self                          | 🧟   |
 | Wyrm        | 2/6   | on-attack, source self | deal `self.attack` to enemy `head[1]`  | 🐉   |
 | Vampire     | 3/7   | on-attack, source self | +1 health to self                      | 🧛   |
-| Goblin      | 2/6   | on-start               | +1/+1 to allies of kind goblin         | 👺   |
+| Goblin      | 1/4   | on-start               | +2/+2 to units of kind goblin          | 👺   |
 | Devourer    | 3/5   | on-start               | gain ally `ahead[0]` stats, kill it    | 👹   |
 | Wraithblade | 5/3   | on-death, target self  | give `self.attack` to ally `behind[0]` | ⚔️   |
 | Deathcap    | 1/4   | on-death, target self  | kill enemy `head[0]`                   | 🍄   |
-| Necromancer | 3/5   | on-death, target ally  | summon a 1/1 in the dead unit's slot   | 🧙   |
-| Basilisk    | 3/5   | on-attack, source self | enemy `head[0]` skips its next attack  | 🐍   |
+| Necromancer | 3/5   | on-death, target ally  | summon a 1/1 skeleton, or +1/+1 to it  | 🧙   |
+| Basilisk    | 3/5   | on-attack, target self | petrify: the attacker skips one attack | 🐍   |
 | Coinbug     | 1/4   | on-death, target self  | +1 gold                                | 🪲   |
 | Vulture     | 2/5   | on-kill, source self   | +1 gold                                | 🦅   |
 
