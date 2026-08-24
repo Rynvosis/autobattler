@@ -2,45 +2,46 @@ using Api.Combat.Events;
 
 namespace Api.Combat.Effects;
 
-public abstract record Effect
+public abstract record Effect<TEvent> where TEvent : BattleEvent
 {
-    public abstract void Apply(IResolutionContext context, Unit source, IReadOnlyList<Unit> targets);
+    public abstract IReadOnlyList<BattleEvent> Apply(Context context, TEvent battleEvent, Unit recipient);
 }
 
-public sealed record Damage : Effect
+public sealed record Damage<TEvent> : Effect<TEvent> where TEvent : BattleEvent
 {
-    public required int Value { get; init; }
+    public required IValue<TEvent> Value { get; init; }
 
-    public override void Apply(IResolutionContext context, Unit source, IReadOnlyList<Unit> targets)
+    public override IReadOnlyList<BattleEvent> Apply(Context context, TEvent battleEvent, Unit recipient)
     {
-        foreach (Unit target in targets.Where(t => !t.Dead))
-        {
-            target.Health -= Value;
-            if (Value > 0)
-            {
-                context.Emit(new UnitHurtEvent { Source = source, Target = target, Value = Value });
-            }
-        }
+        int value = Value.Resolve(context, battleEvent, recipient);
+
+        recipient.Health -= value;
+
+        return value > 0 ? [new UnitHurtEvent { Source = context.Owner, Target = recipient, Value = value }] : [];
     }
 }
 
-public sealed record StatChange : Effect
+public sealed record StatChange<TEvent> : Effect<TEvent> where TEvent : BattleEvent
 {
-    public required int Attack { get; init; }
-    public required int Health { get; init; }
+    public required IValue<TEvent> Attack { get; init; }
+    public required IValue<TEvent> Health { get; init; }
 
-    public override void Apply(IResolutionContext context, Unit source, IReadOnlyList<Unit> targets)
+    public override IReadOnlyList<BattleEvent> Apply(Context context, TEvent battleEvent, Unit recipient)
     {
-        foreach (Unit target in targets.Where(t => !t.Dead))
-        {
-            target.Attack += Attack;
-            target.Health += Health;
+        int attack = Attack.Resolve(context, battleEvent, recipient);
+        int health = Health.Resolve(context, battleEvent, recipient);
 
-            if (Attack != 0)
-                context.Emit(new UnitAttackChangeEvent { Source = source, Target = target, Value = Attack });
+        recipient.Attack += attack;
+        recipient.Health += health;
 
-            if (Health != 0)
-                context.Emit(new UnitHealthChangeEvent { Source = source, Target = target, Value = Health });
-        }
+        List<BattleEvent> events = [];
+
+        if (attack != 0)
+            events.Add(new UnitAttackChangeEvent { Source = context.Owner, Target = recipient, Value = attack });
+
+        if (health != 0)
+            events.Add(new UnitHealthChangeEvent { Source = context.Owner, Target = recipient, Value = health });
+
+        return events;
     }
 }

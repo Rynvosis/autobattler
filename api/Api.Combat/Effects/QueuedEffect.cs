@@ -1,10 +1,27 @@
+using Api.Combat.Events;
+
 namespace Api.Combat.Effects;
 
-public record QueuedEffect
+public abstract record QueuedEffect
 {
-    public required Effect Effect { get; init; }
-    public required Unit Source { get; init; }
+    public required Context Context { get; init; }
     public required IReadOnlyList<Unit> Targets { get; init; }
 
-    public void Apply(IResolutionContext context) => Effect.Apply(context, Source, Targets);
+    public abstract IReadOnlyList<BattleEvent> Apply();
+}
+
+public sealed record QueuedEffect<TEvent> : QueuedEffect where TEvent : BattleEvent
+{
+    public required Effect<TEvent> Effect { get; init; }
+    public required TEvent Event { get; init; }
+
+    public override IReadOnlyList<BattleEvent> Apply()
+    {
+        return
+        [
+            .. Targets
+                .Where(target => !target.Dead)
+                .SelectMany(target => Effect.Apply(Context, Event, target))
+        ];
+    }
 }

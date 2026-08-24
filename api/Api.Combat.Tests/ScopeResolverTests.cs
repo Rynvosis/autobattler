@@ -1,3 +1,4 @@
+using Api.Combat.Abilities;
 using Api.Combat.Abilities.Scopes;
 
 namespace Api.Combat.Tests;
@@ -13,47 +14,84 @@ public class ScopeResolverTests
         { new TriggerAheadScope { Range = ScopeRange.At(0) }, 4, [2] },
     };
 
+    public static TheoryData<IEffectScope<UnitHurtEvent>, int, int, int, int[]> EffectCases => new()
+    {
+        { new SelfScope(), 0, 1, 3, [0] },
+        { Scoped(new EventSource()), 0, 3, 1, [3] },
+        { Scoped(new EventTarget()), 0, 1, 4, [4] },
+        {
+            new EffectBehindScope<UnitHurtEvent> { Anchor = new SelfScope(), Range = ScopeRange.At(0) },
+            0, 1, 3, [2]
+        },
+        {
+            new EffectBehindScope<UnitHurtEvent> { Anchor = Scoped(new EventSource()), Range = ScopeRange.At(0) },
+            0, 3, 1, [5]
+        },
+        {
+            new EffectAheadScope<UnitHurtEvent> { Anchor = Scoped(new EventTarget()), Range = ScopeRange.At(0) },
+            0, 1, 5, [3]
+        }
+    };
+
+    private static ParticipantScope<UnitHurtEvent> Scoped(IParticipant<UnitHurtEvent> participant)
+    {
+        return new ParticipantScope<UnitHurtEvent> { Participant = participant };
+    }
+
     [Theory]
     [MemberData(nameof(TriggerCases))]
-    public void ResolveInTriggerContext_ReturnsExpectedUnits(ITriggerScope scope, int ownerId, int[] expected)
+    public void ResolveInTriggerPosition_ReturnsExpectedUnits(ITriggerScope scope, int ownerId, int[] expected)
     {
         Board board = Boards.ThreeVersusThree();
-        TriggerContext context = new(board, Boards.Find(board, ownerId));
 
-        IReadOnlyList<Unit> resolved = scope.Resolve(context);
+        IReadOnlyList<Unit> resolved = scope.Resolve(new Context(board, Boards.Find(board, ownerId)));
 
         Assert.Equal(expected, resolved.Select(unit => unit.Id));
     }
 
-    public static TheoryData<IEffectScope, int, int?, int?, int[]> EffectCases => new()
-    {
-        { new SelfScope(), 0, null, null, [0] },
-        { new EventSourceScope(), 0, 3, null, [3] },
-        { new EventSourceScope(), 0, null, null, [] },
-        { new EventTargetScope(), 0, null, 4, [4] },
-        { new EffectBehindScope { Anchor = new SelfScope(), Range = ScopeRange.At(0) }, 0, null, null, [2] },
-        { new EffectBehindScope { Anchor = new EventSourceScope(), Range = ScopeRange.At(0) }, 0, 3, null, [5] },
-        { new EffectAheadScope { Anchor = new EventTargetScope(), Range = ScopeRange.At(0) }, 0, null, 5, [3] },
-    };
-
     [Theory]
     [MemberData(nameof(EffectCases))]
-    public void ResolveInEffectContext_ReturnsExpectedUnits(
-        IEffectScope scope,
+    public void ResolveInEffectPosition_ReturnsExpectedUnits(
+        IEffectScope<UnitHurtEvent> scope,
         int ownerId,
-        int? sourceId,
-        int? targetId,
+        int sourceId,
+        int targetId,
         int[] expected)
     {
         Board board = Boards.ThreeVersusThree();
-        EffectContext context = new(
-            board,
-            Boards.Find(board, ownerId),
-            Boards.FindOrNull(board, sourceId),
-            Boards.FindOrNull(board, targetId));
 
-        IReadOnlyList<Unit> resolved = scope.Resolve(context);
+        IReadOnlyList<Unit> resolved =
+            scope.Resolve(new Context(board, Boards.Find(board, ownerId)), Boards.HurtEvent(board, sourceId, targetId));
 
         Assert.Equal(expected, resolved.Select(unit => unit.Id));
+    }
+
+    [Fact]
+    public void ResolveInEffectPosition_CorpseInThePath_SkipsToTheNextLivingUnit()
+    {
+        Board board = Boards.ThreeVersusThree();
+        Boards.Find(board, 2).Dead = true;
+
+        EffectAheadScope<UnitHurtEvent> scope = new() { Anchor = new SelfScope(), Range = ScopeRange.At(0) };
+
+        IReadOnlyList<Unit> resolved =
+            scope.Resolve(new Context(board, Boards.Find(board, 4)), Boards.HurtEvent(board, 1, 3));
+
+        Assert.Equal([0], resolved.Select(unit => unit.Id));
+    }
+
+    [Fact]
+    public void ResolveInEffectPosition_DeadAnchor_StillWalksFromItsSlot()
+    {
+        Board board = Boards.ThreeVersusThree();
+        Boards.Find(board, 3).Dead = true;
+
+        EffectBehindScope<UnitHurtEvent> scope =
+            new() { Anchor = Scoped(new EventSource()), Range = ScopeRange.At(0) };
+
+        IReadOnlyList<Unit> resolved =
+            scope.Resolve(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 3, 1));
+
+        Assert.Equal([5], resolved.Select(unit => unit.Id));
     }
 }

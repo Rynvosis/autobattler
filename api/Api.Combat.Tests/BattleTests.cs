@@ -41,12 +41,7 @@ public class BattleTests
     [Fact]
     public void GhostRetaliatesOnHurt_ReturnsDraw()
     {
-        Ability retaliate = new()
-        {
-            Trigger = new TargetTrigger<UnitHurtEvent> { Scopes = [new SelfScope()] },
-            Effect = new Damage { Value = 1 },
-            Scopes = [new EventSourceScope()]
-        };
+        Ability retaliate = Boards.Retaliate();
 
         Unit player = new() { Id = 0, Attack = 2, Health = 2, Ability = null };
         Unit ghost = new() { Id = 1, Attack = 1, Health = 2, Ability = retaliate };
@@ -59,10 +54,10 @@ public class BattleTests
     [Fact]
     public void ChipDamageInAnEarlierTick_EarnsNoKillCredit()
     {
-        Ability opener = new()
+        Ability opener = new Ability<StartEvent>
         {
             Trigger = new RoundTrigger<StartEvent>(),
-            Effect = new Damage { Value = 1 },
+            Effect = new Damage<StartEvent> { Value = Literal.Of(1) },
             Scopes = [new HeadScope { Side = ScopeSide.Enemy, Range = ScopeRange.At(0) }]
         };
 

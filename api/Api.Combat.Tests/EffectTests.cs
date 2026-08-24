@@ -4,126 +4,92 @@ namespace Api.Combat.Tests;
 
 public class EffectTests
 {
-    [Fact]
-    public void Damage_LiveTarget_LowersHealthAndEmitsHurt()
+    private static readonly StartEvent Start = new();
+
+    private static (Context Context, Unit Source, Unit Recipient) OnBoard()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        RecordingContext context = new();
+        Board board = Boards.ThreeVersusThree();
+        Unit source = Boards.Find(board, 0);
+        Unit recipient = Boards.Find(board, 1);
 
-        new Damage { Value = 1 }.Apply(context, source, [target]);
+        return (new Context(board, source), source, recipient);
+    }
 
-        Assert.Equal(0, target.Health);
-        Assert.Equal([new UnitHurtEvent { Source = source, Target = target, Value = 1 }], context.Events);
+    private static Damage<StartEvent> Damaging(int amount)
+    {
+        return new Damage<StartEvent> { Value = Literal.Of(amount) };
+    }
+
+    private static StatChange<StartEvent> Changing(int attack, int health)
+    {
+        return new StatChange<StartEvent> { Attack = Literal.Of(attack), Health = Literal.Of(health) };
     }
 
     [Fact]
-    public void Damage_DeadTarget_EmitsNothing()
+    public void Damage_LiveTarget_LowersHealthAndEmitsHurt()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        target.Dead = true;
-        RecordingContext context = new();
+        (Context context, Unit source, Unit recipient) = OnBoard();
 
-        new Damage { Value = 1 }.Apply(context, source, [target]);
+        IReadOnlyList<BattleEvent> events = Damaging(1).Apply(context, Start, recipient);
 
-        Assert.Equal(1, target.Health);
-        Assert.Empty(context.Events);
+        Assert.Equal(0, recipient.Health);
+        Assert.Equal([new UnitHurtEvent { Source = source, Target = recipient, Value = 1 }], events);
     }
 
     [Fact]
     public void Damage_ZeroValue_EmitsNothing()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        RecordingContext context = new();
+        (Context context, Unit _, Unit recipient) = OnBoard();
 
-        new Damage { Value = 0 }.Apply(context, source, [target]);
+        IReadOnlyList<BattleEvent> events = Damaging(0).Apply(context, Start, recipient);
 
-        Assert.Equal(1, target.Health);
-        Assert.Empty(context.Events);
+        Assert.Equal(1, recipient.Health);
+        Assert.Empty(events);
     }
 
     [Fact]
     public void StatChange_LiveTarget_RaisesBothStatsAndEmitsBothChanges()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        RecordingContext context = new();
+        (Context context, Unit source, Unit recipient) = OnBoard();
 
-        new StatChange { Attack = 1, Health = 2 }.Apply(context, source, [target]);
+        IReadOnlyList<BattleEvent> events = Changing(1, 2).Apply(context, Start, recipient);
 
-        Assert.Equal(2, target.Attack);
-        Assert.Equal(3, target.Health);
+        Assert.Equal(2, recipient.Attack);
+        Assert.Equal(3, recipient.Health);
         Assert.Equal(
             [
-                new UnitAttackChangeEvent { Source = source, Target = target, Value = 1 },
-                new UnitHealthChangeEvent { Source = source, Target = target, Value = 2 }
+                new UnitAttackChangeEvent { Source = source, Target = recipient, Value = 1 },
+                new UnitHealthChangeEvent { Source = source, Target = recipient, Value = 2 }
             ],
-            context.Events);
+            events);
     }
 
     [Fact]
     public void StatChange_HealthOnly_EmitsNoAttackChange()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        RecordingContext context = new();
+        (Context context, Unit source, Unit recipient) = OnBoard();
 
-        new StatChange { Attack = 0, Health = 1 }.Apply(context, source, [target]);
+        IReadOnlyList<BattleEvent> events = Changing(0, 1).Apply(context, Start, recipient);
 
-        Assert.Equal(
-            [new UnitHealthChangeEvent { Source = source, Target = target, Value = 1 }],
-            context.Events);
+        Assert.Equal([new UnitHealthChangeEvent { Source = source, Target = recipient, Value = 1 }], events);
     }
 
     [Fact]
     public void StatChange_NegativeHealth_LeavesTargetForTheDeathPass()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        RecordingContext context = new();
+        (Context context, Unit _, Unit recipient) = OnBoard();
 
-        new StatChange { Attack = 0, Health = -1 }.Apply(context, source, [target]);
+        Changing(0, -1).Apply(context, Start, recipient);
 
-        Assert.Equal(0, target.Health);
-        Assert.False(target.Dead);
-    }
-
-    [Fact]
-    public void StatChange_DeadTarget_EmitsNothing()
-    {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        target.Dead = true;
-        RecordingContext context = new();
-
-        new StatChange { Attack = 1, Health = 1 }.Apply(context, source, [target]);
-
-        Assert.Equal(1, target.Attack);
-        Assert.Equal(1, target.Health);
-        Assert.Empty(context.Events);
+        Assert.Equal(0, recipient.Health);
+        Assert.False(recipient.Dead);
     }
 
     [Fact]
     public void StatChange_NoDeltas_EmitsNothing()
     {
-        Unit source = Boards.Unit(0);
-        Unit target = Boards.Unit(1);
-        RecordingContext context = new();
+        (Context context, Unit _, Unit recipient) = OnBoard();
 
-        new StatChange { Attack = 0, Health = 0 }.Apply(context, source, [target]);
-
-        Assert.Empty(context.Events);
-    }
-
-    private sealed class RecordingContext : IResolutionContext
-    {
-        public List<BattleEvent> Events { get; } = [];
-
-        public void Emit(BattleEvent battleEvent)
-        {
-            Events.Add(battleEvent);
-        }
+        Assert.Empty(Changing(0, 0).Apply(context, Start, recipient));
     }
 }
