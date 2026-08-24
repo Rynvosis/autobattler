@@ -1,85 +1,33 @@
-using Api.Combat.Abilities;
-using Api.Combat.Effects;
-using Api.Combat.Scopes;
+using Api.Content;
 
 namespace Api.Combat.Tests;
 
-// Each test builds a monster exactly as DESIGN's roster describes it, at its designed stats,
-// and asserts the ability does what the table says.
+// Abilities come from Api.Content, so the ability under test is the one that ships.
 public class MonsterTests
 {
-    private static Unit Monster(int id, string kind, int attack, int health)
+    private static Unit Monster(int id, UnitDefinition definition)
     {
-        return new Unit { Id = id, Kind = new Kind(kind), Attack = attack, Health = health };
-    }
-
-    // Deathcap 1/4 — on-death, target self: kill enemy head[0]
-    private static Ability Deathcap()
-    {
-        return new Ability<UnitDeathEvent>
+        return new Unit
         {
-            Trigger = new UnitTrigger<UnitDeathEvent>
-            {
-                Participant = new EventTarget(),
-                Scopes = [Any<BattleEvent>.Of(new Self())]
-            },
-            Effects =
-            [
-                new ScopedEffect<UnitDeathEvent>
-                {
-                    Effect = new Damage<UnitDeathEvent> { Value = new RecipientStat { Stat = Stat.Health } },
-                    Scopes =
-                    [
-                        new Every<UnitDeathEvent>
-                        {
-                            Relation = new FromHead { Side = ScopeSide.Enemy },
-                            Range = ScopeRange.At(0)
-                        }
-                    ]
-                }
-            ]
+            Id = id,
+            Kind = definition.Kind,
+            Attack = definition.Attack,
+            Health = definition.Health
         };
     }
 
-    // Devourer 3/5 — on-start: gain ally ahead[0] stats, kill it
-    private static Ability Devourer()
+    private static Unit Dummy(int id, int attack, int health)
     {
-        Ahead<StartEvent> ahead = new() { Anchor = One<StartEvent>.Of(new Self()) };
-        One<StartEvent> eaten = One<StartEvent>.Of(ahead);
-
-        return new Ability<StartEvent>
-        {
-            Trigger = new RoundTrigger<StartEvent>(),
-            Effects =
-            [
-                new ScopedEffect<StartEvent>
-                {
-                    Effect = new StatChange<StartEvent>
-                    {
-                        Attack = new UnitStat<StartEvent> { Subject = eaten, Stat = Stat.Attack },
-                        Health = new UnitStat<StartEvent> { Subject = eaten, Stat = Stat.Health }
-                    },
-                    Scopes = [Every<StartEvent>.Of(new Self())]
-                },
-                new ScopedEffect<StartEvent>
-                {
-                    Effect = new Damage<StartEvent> { Value = new RecipientStat { Stat = Stat.Health } },
-                    Scopes = [new Every<StartEvent> { Relation = ahead, Range = ScopeRange.At(0) }]
-                }
-            ]
-        };
+        return new Unit { Id = id, Kind = new Kind("dummy"), Attack = attack, Health = health };
     }
 
     [Fact]
     public void Deathcap_WhenItDies_KillsTheEnemyHead()
     {
-        Unit deathcap = Monster(0, "deathcap", 1, 4);
-        Unit golem = Monster(1, "golem", 5, 10);
+        Unit deathcap = Monster(0, Monsters.Deathcap);
+        Unit golem = Monster(1, Monsters.Golem);
 
-        BattleResult result = Battle.Resolve(
-            new Team([deathcap]),
-            new Team([golem]),
-            Roster.Of((new Kind("deathcap"), Deathcap())));
+        BattleResult result = Battle.Resolve(new Team([deathcap]), new Team([golem]), Monsters.Roster);
 
         Assert.Equal(BattleOutcome.Draw, result.Outcome);
         Assert.True(golem.Dead);
@@ -87,19 +35,100 @@ public class MonsterTests
     }
 
     [Fact]
+    public void Deathcap_WhenTheEnemyHeadDiesInTheSameSubtick_KillsTheNextEnemy()
+    {
+        Unit deathcap = Monster(0, Monsters.Deathcap);
+        Unit head = Dummy(1, 4, 1);
+        Unit second = Dummy(2, 5, 10);
+
+        BattleResult result = Battle.Resolve(new Team([deathcap]), new Team([head, second]), Monsters.Roster);
+
+        Assert.True(head.Dead);
+        Assert.True(second.Dead);
+        Assert.Contains(result.Events.OfType<UnitKillEvent>(), kill => ReferenceEquals(kill.Target, second));
+    }
+
+    [Fact]
     public void Devourer_OnStart_GainsTheStatsOfTheAllyAheadThenKillsIt()
     {
-        Unit golem = Monster(0, "golem", 5, 10);
-        Unit devourer = Monster(1, "devourer", 3, 5);
-        Unit dummy = Monster(2, "dummy", 0, 99);
+        Unit golem = Monster(0, Monsters.Golem);
+        Unit devourer = Monster(1, Monsters.Devourer);
+        Unit enemy = Dummy(2, 0, 99);
 
-        BattleResult result = Battle.Resolve(
-            new Team([golem, devourer]),
-            new Team([dummy]),
-            Roster.Of((new Kind("devourer"), Devourer())));
+        BattleResult result = Battle.Resolve(new Team([golem, devourer]), new Team([enemy]), Monsters.Roster);
 
         Assert.Equal(8, devourer.Attack);
         Assert.True(golem.Dead);
         Assert.Contains(result.Events.OfType<UnitKillEvent>(), kill => ReferenceEquals(kill.Target, golem));
+    }
+
+    [Fact]
+    public void Ghoul_WhenAnEnemyDies_GainsTwoOfEachStat()
+    {
+        Unit ghoul = Monster(0, Monsters.Ghoul);
+        Unit enemy = Dummy(1, 0, 1);
+
+        BattleResult result = Battle.Resolve(new Team([ghoul]), new Team([enemy]), Monsters.Roster);
+
+        Assert.Equal(BattleOutcome.Win, result.Outcome);
+        Assert.Equal(4, ghoul.Attack);
+        Assert.Equal(7, ghoul.Health);
+    }
+
+    [Fact]
+    public void Wyrm_WhenItAttacks_DealsItsAttackToTheSecondEnemy()
+    {
+        Unit wyrm = Monster(0, Monsters.Wyrm);
+        Unit head = Dummy(1, 0, 2);
+        Unit second = Dummy(2, 0, 2);
+
+        BattleResult result = Battle.Resolve(new Team([wyrm]), new Team([head, second]), Monsters.Roster);
+
+        Assert.True(second.Dead);
+        Assert.Contains(
+            result.Events.OfType<UnitHurtEvent>(),
+            hurt => ReferenceEquals(hurt.Source, wyrm) && ReferenceEquals(hurt.Target, second) && hurt.Value == 2);
+    }
+
+    [Fact]
+    public void Vampire_WhenItAttacks_GainsOneHealth()
+    {
+        Unit vampire = Monster(0, Monsters.Vampire);
+        Unit enemy = Dummy(1, 0, 1);
+
+        Battle.Resolve(new Team([vampire]), new Team([enemy]), Monsters.Roster);
+
+        Assert.Equal(8, vampire.Health);
+        Assert.Equal(3, vampire.Attack);
+    }
+
+    [Fact]
+    public void Goblin_OnStart_GivesEveryGoblinIncludingItselfTwoOfEachStat()
+    {
+        Unit first = Monster(0, Monsters.Goblin);
+        Unit second = Monster(1, Monsters.Goblin);
+        Unit golem = Monster(2, Monsters.Golem);
+        Unit enemy = Dummy(3, 0, 1);
+
+        Battle.Resolve(new Team([first, second, golem]), new Team([enemy]), Monsters.Roster);
+
+        Assert.Equal(5, first.Attack);
+        Assert.Equal(8, first.Health);
+        Assert.Equal(5, second.Attack);
+        Assert.Equal(8, second.Health);
+        Assert.Equal(5, golem.Attack);
+    }
+
+    [Fact]
+    public void Wraithblade_WhenItDies_GivesItsAttackToTheAllyBehind()
+    {
+        Unit wraithblade = Monster(0, Monsters.Wraithblade);
+        Unit golem = Monster(1, Monsters.Golem);
+        Unit killer = Dummy(2, 3, 95);
+
+        Battle.Resolve(new Team([wraithblade, golem]), new Team([killer]), Monsters.Roster);
+
+        Assert.True(wraithblade.Dead);
+        Assert.Equal(10, golem.Attack);
     }
 }
