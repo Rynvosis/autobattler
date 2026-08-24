@@ -1,4 +1,4 @@
-using Api.Combat.Abilities;
+using Api.Combat.Abilities.Scopes;
 using Api.Combat.Events;
 
 namespace Api.Combat.Effects;
@@ -12,44 +12,23 @@ public sealed record Literal : IValue<BattleEvent>
 {
     public required int Amount { get; init; }
 
-    public int Resolve(Context context, BattleEvent battleEvent, Unit recipient)
-    {
-        return Amount;
-    }
+    public static Literal Of(int amount) => new() { Amount = amount };
 
-    public static Literal Of(int amount)
-    {
-        return new Literal { Amount = amount };
-    }
-}
-
-public sealed record SelfStat : IValue<BattleEvent>
-{
-    public required Stat Stat { get; init; }
-
-    public int Resolve(Context context, BattleEvent battleEvent, Unit recipient)
-    {
-        return Stat.Of(context.Owner);
-    }
+    public int Resolve(Context context, BattleEvent battleEvent, Unit recipient) => Amount;
 }
 
 public sealed record RecipientStat : IValue<BattleEvent>
 {
     public required Stat Stat { get; init; }
 
-    public int Resolve(Context context, BattleEvent battleEvent, Unit recipient)
-    {
-        return Stat.Of(recipient);
-    }
+    public int Resolve(Context context, BattleEvent battleEvent, Unit recipient) => Stat.Of(recipient);
 }
 
-public sealed record ParticipantStat<TEvent> : IValue<TEvent> where TEvent : UnitEvent
+public sealed record UnitStat<TEvent> : IValue<TEvent> where TEvent : BattleEvent
 {
-    public required IParticipant<TEvent> Participant { get; init; }
+    public required One<TEvent> Subject { get; init; }
     public required Stat Stat { get; init; }
 
-    public int Resolve(Context context, TEvent battleEvent, Unit recipient)
-    {
-        return Stat.Of(Participant.Of(battleEvent));
-    }
+    public int Resolve(Context context, TEvent battleEvent, Unit recipient) =>
+        Subject.Of(context, battleEvent) is { } unit ? Stat.Of(unit) : 0;
 }

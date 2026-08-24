@@ -57,8 +57,21 @@ public class BattleTests
         Ability opener = new Ability<StartEvent>
         {
             Trigger = new RoundTrigger<StartEvent>(),
-            Effect = new Damage<StartEvent> { Value = Literal.Of(1) },
-            Scopes = [new HeadScope { Side = ScopeSide.Enemy, Range = ScopeRange.At(0) }]
+            Effects =
+            [
+                new ScopedEffect<StartEvent>
+                {
+                    Effect = new Damage<StartEvent> { Value = Literal.Of(1) },
+                    Scopes =
+                    [
+                        new Every<StartEvent>
+                        {
+                            Relation = new FromHead { Side = ScopeSide.Enemy },
+                            Range = ScopeRange.At(0)
+                        }
+                    ]
+                }
+            ]
         };
 
         Unit attacker = new() { Id = 0, Attack = 1, Health = 9, Ability = null };
@@ -71,6 +84,42 @@ public class BattleTests
 
         UnitKillEvent kill = Assert.Single(result.Events.OfType<UnitKillEvent>());
         Assert.Same(attacker, kill.Source);
+    }
+
+    [Fact]
+    public void DamageEqualToRecipientHealth_KillsAndCreditsTheKiller()
+    {
+        Ability deathcap = new Ability<UnitDeathEvent>
+        {
+            Trigger = new UnitTrigger<UnitDeathEvent>
+            {
+                Participant = new EventTarget(),
+                Scopes = [Any<BattleEvent>.Of(new Self())]
+            },
+            Effects =
+            [
+                new ScopedEffect<UnitDeathEvent>
+                {
+                    Effect = new Damage<UnitDeathEvent> { Value = new RecipientStat { Stat = Stat.Health } },
+                    Scopes =
+                    [
+                        new Every<UnitDeathEvent>
+                        {
+                            Relation = new FromHead { Side = ScopeSide.Enemy },
+                            Range = ScopeRange.At(0)
+                        }
+                    ]
+                }
+            ]
+        };
+
+        Unit player = new() { Id = 0, Attack = 1, Health = 1, Ability = deathcap };
+        Unit ghost = new() { Id = 1, Attack = 1, Health = 9, Ability = null };
+
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
+
+        Assert.Equal(BattleOutcome.Draw, result.Outcome);
+        Assert.Contains(result.Events.OfType<UnitKillEvent>(), kill => ReferenceEquals(kill.Source, player));
     }
 
     [Fact]

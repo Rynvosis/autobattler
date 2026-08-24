@@ -1,0 +1,23 @@
+using Api.Combat.Abilities.Scopes;
+using Api.Combat.Effects;
+using Api.Combat.Events;
+
+namespace Api.Combat.Abilities;
+
+public sealed record ScopedEffect<TEvent> where TEvent : BattleEvent
+{
+    public required Effect<TEvent> Effect { get; init; }
+    public required IReadOnlyList<Every<TEvent>> Scopes { get; init; }
+
+    public IReadOnlyList<Unit> Targets(Context context, TEvent battleEvent)
+    {
+        HashSet<Unit> selected = [.. Scopes.SelectMany(scope => scope.Of(context, battleEvent))];
+
+        return
+        [
+            .. context.Board.UnitsInIterationOrder()
+                .Select(entry => entry.unit)
+                .Where(selected.Contains)
+        ];
+    }
+}

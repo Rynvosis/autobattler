@@ -1,4 +1,5 @@
 using Api.Combat.Abilities;
+using Api.Combat.Abilities.Scopes;
 using Api.Combat.Effects;
 
 namespace Api.Combat.Tests;
@@ -19,12 +20,12 @@ public class ValueTests
     }
 
     [Fact]
-    public void SelfStat_ReadsTheOwner()
+    public void UnitStat_OverSelf_ReadsTheOwner()
     {
         Board board = Boards.ThreeVersusThree();
         Boards.Find(board, 0).Attack = 5;
 
-        int resolved = new SelfStat { Stat = Stat.Attack }
+        int resolved = new UnitStat<StartEvent> { Subject = One<StartEvent>.Of(new Self()), Stat = Stat.Attack }
             .Resolve(new Context(board, Boards.Find(board, 0)), Start, Boards.Find(board, 1));
 
         Assert.Equal(5, resolved);
@@ -44,13 +45,21 @@ public class ValueTests
     }
 
     [Fact]
-    public void ParticipantStat_AnchoredOnSource_ReadsTheUnitThatCausedIt()
+    public void UnitStat_OverEventSource_ReadsTheUnitThatCausedIt()
     {
         Board board = Boards.ThreeVersusThree();
         Boards.Find(board, 3).Attack = 7;
 
-        int resolved = new ParticipantStat<UnitHurtEvent> { Participant = new EventSource(), Stat = Stat.Attack }
-            .Resolve(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 3, 5), Boards.Find(board, 1));
+        UnitStat<UnitHurtEvent> value = new()
+        {
+            Subject = One<UnitHurtEvent>.Of(new EventUnit<UnitHurtEvent> { Participant = new EventSource() }),
+            Stat = Stat.Attack
+        };
+
+        int resolved = value.Resolve(
+            new Context(board, Boards.Find(board, 0)),
+            Boards.HurtEvent(board, 3, 5),
+            Boards.Find(board, 1));
 
         Assert.Equal(7, resolved);
     }
@@ -64,7 +73,7 @@ public class ValueTests
         owner.Attack = 3;
         recipient.Health = 10;
 
-        Damage<StartEvent> damage = new() { Value = new SelfStat { Stat = Stat.Attack } };
+        Damage<StartEvent> damage = new() { Value = new UnitStat<StartEvent> { Subject = One<StartEvent>.Of(new Self()), Stat = Stat.Attack } };
         IReadOnlyList<BattleEvent> events = damage.Apply(new Context(board, owner), Start, recipient);
 
         Assert.Equal(7, recipient.Health);
