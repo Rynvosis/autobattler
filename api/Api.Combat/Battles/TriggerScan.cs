@@ -1,7 +1,9 @@
+using Api.Combat.Abilities;
+using Api.Combat.Battlefield;
 using Api.Combat.Effects;
 using Api.Combat.Events;
 
-namespace Api.Combat.Abilities;
+namespace Api.Combat.Battles;
 
 public static class TriggerScan
 {

@@ -1,8 +1,9 @@
 using Api.Combat.Abilities;
+using Api.Combat.Battlefield;
 using Api.Combat.Effects;
 using Api.Combat.Events;
 
-namespace Api.Combat.Scheduling;
+namespace Api.Combat.Battles;
 
 public class Scheduler(Board board)
 {

@@ -1,4 +1,6 @@
-namespace Api.Combat.Abilities.Scopes;
+using Api.Combat.Battlefield;
+
+namespace Api.Combat.Scopes;
 
 public static class Walk
 {

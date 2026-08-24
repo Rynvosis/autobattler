@@ -1,4 +1,4 @@
-namespace Api.Combat.Abilities.Scopes;
+namespace Api.Combat.Scopes;
 
 public enum ScopeSide
 {
