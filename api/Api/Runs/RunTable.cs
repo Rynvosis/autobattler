@@ -1,3 +1,6 @@
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
+
 namespace Api.Runs;
 
 public static class RunTable
@@ -7,14 +10,29 @@ public static class RunTable
     public const string RunId = "runId";
     public const string Version = "version";
     public const string Gold = "gold";
-    public const string Tier = "tier";
+    public const string Stage = "stage";
     public const string ExpiresAt = "expiresAt";
     public const string Units = "units";
 
-    public static class Unit
+    public static CreateTableRequest CreateRequest() => new()
     {
-        public const string Kind = "kind";
-        public const string Attack = "attack";
-        public const string Health = "health";
-    }
+        TableName = TableName,
+        AttributeDefinitions =
+        [
+            new AttributeDefinition
+            {
+                AttributeName = RunId,
+                AttributeType = ScalarAttributeType.S
+            }
+        ],
+        KeySchema =
+        [
+            new KeySchemaElement
+            {
+                AttributeName = RunId,
+                KeyType = KeyType.HASH
+            }
+        ],
+        BillingMode = BillingMode.PAY_PER_REQUEST
+    };
 }

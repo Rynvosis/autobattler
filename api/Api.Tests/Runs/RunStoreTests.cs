@@ -1,5 +1,6 @@
 using Api.Combat.Units;
 using Api.Runs;
+using Api.Teams;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.DynamoDb;
@@ -41,12 +42,12 @@ public sealed class RunStoreTests : IAsyncLifetime
             RunId = "test-run-123",
             Version = 1,
             Gold = 10,
-            Tier = 1,
+            Stage = 1,
             ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(1787769654),
             Units =
             [
-                new RunUnit { Kind = new Kind("goblin"), Attack = 3, Health = 5 },
-                new RunUnit { Kind = new Kind("goblin"), Attack = 7, Health = 2 }
+                new TeamUnit { Kind = new Kind("goblin"), Attack = 3, Health = 5 },
+                new TeamUnit { Kind = new Kind("goblin"), Attack = 7, Health = 2 }
             ]
         };
         await _store.PutAsync(saved, CancellationToken.None);
@@ -54,7 +55,7 @@ public sealed class RunStoreTests : IAsyncLifetime
         Run? loaded = await _store.GetAsync(saved.RunId, CancellationToken.None);
 
         Assert.NotNull(loaded);
-        RunUnit[] noUnits = [];
+        TeamUnit[] noUnits = [];
         Assert.Equal(saved.Units, loaded.Units);
         Assert.Equal(saved with { Units = noUnits }, loaded with { Units = noUnits });
     }
