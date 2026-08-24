@@ -38,6 +38,7 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
         {
             [RunTable.RunId] = new AttributeValue { S = run.RunId },
             [RunTable.Version] = AttributeValues.Number(run.Version),
+            [RunTable.Victories] = AttributeValues.Number(run.Victories),
             [RunTable.Gold] = AttributeValues.Number(run.Gold),
             [RunTable.Stage] = AttributeValues.Number(run.Stage),
             [RunTable.ExpiresAt] = AttributeValues.Number(run.ExpiresAt.ToUnixTimeSeconds()),
@@ -51,6 +52,7 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
         {
             RunId = item[RunTable.RunId].S,
             Version = AttributeValues.ToInt32(item[RunTable.Version]),
+            Victories = AttributeValues.ToInt32(item[RunTable.Victories]),
             Gold = AttributeValues.ToInt32(item[RunTable.Gold]),
             Stage = AttributeValues.ToInt32(item[RunTable.Stage]),
             ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(AttributeValues.ToInt64(item[RunTable.ExpiresAt])),

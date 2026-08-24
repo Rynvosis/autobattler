@@ -6,7 +6,8 @@ Monsters have an Attack stat, a Health stat and an Ability.
 
 - Shop phase: buy monsters, reorder the team, sell monsters back.
 - Battle phase: monsters fight in a queue. Heads attack each tick, abilities react.
-- Player health drops on a loss. Victory points on a win.
+- A run is five stages. A win counts a victory, and every result pays gold.
+- A unit costs 2 gold and a reroll 1. A run opens on 7, and a stage pays 6 for a win, 5 for a draw, 4 for a loss.
 
 ## Scope
 
@@ -52,6 +53,7 @@ Monsters and undead, drawn as emoji.
 | Content        | The versioned data defining units and abilities                |
 | Ability        | The rules text on a unit. One trigger, and effects with scopes |
 | Gold           | The run currency, spent in the shop                            |
+| Victory        | A won battle. A run is scored by how many it has               |
 | Trigger        | An event type, and a scope tested against a participant        |
 | Effect         | A change to the board                                          |
 | Scope          | A set of units, evaluated when its trigger fires               |
