@@ -1,7 +1,7 @@
-using System.Globalization;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-using Api.Combat.Units;
+using Api.Storage;
+using Api.Teams;
 
 namespace Api.Runs;
 
@@ -14,7 +14,7 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
             TableName = RunTable.TableName,
             Key = new Dictionary<string, AttributeValue>
             {
-                [RunTable.RunId] = new() { S = runId }
+                [RunTable.RunId] = new AttributeValue { S = runId }
             },
             ConsistentRead = true
         }, cancellationToken);
@@ -22,6 +22,7 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
         return response.IsItemSet ? FromItem(response.Item) : null;
     }
 
+    // TODO: condition the write on the stored version.
     public Task PutAsync(Run run, CancellationToken cancellationToken)
     {
         return dynamoDB.PutItemAsync(new PutItemRequest
@@ -35,26 +36,12 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
     {
         return new Dictionary<string, AttributeValue>
         {
-            [RunTable.RunId] = new() { S = run.RunId },
-            [RunTable.Version] = ToNumber(run.Version),
-            [RunTable.Gold] = ToNumber(run.Gold),
-            [RunTable.Tier] = ToNumber(run.Tier),
-            [RunTable.ExpiresAt] = ToNumber(run.ExpiresAt.ToUnixTimeSeconds()),
-            [RunTable.Units] = new()
-            {
-                L =
-                [
-                    .. run.Units.Select(unit => new AttributeValue
-                    {
-                        M = new Dictionary<string, AttributeValue>
-                        {
-                            [RunTable.Unit.Kind] = new() { S = unit.Kind.Value },
-                            [RunTable.Unit.Attack] = ToNumber(unit.Attack),
-                            [RunTable.Unit.Health] = ToNumber(unit.Health)
-                        }
-                    })
-                ]
-            }
+            [RunTable.RunId] = new AttributeValue { S = run.RunId },
+            [RunTable.Version] = AttributeValues.Number(run.Version),
+            [RunTable.Gold] = AttributeValues.Number(run.Gold),
+            [RunTable.Stage] = AttributeValues.Number(run.Stage),
+            [RunTable.ExpiresAt] = AttributeValues.Number(run.ExpiresAt.ToUnixTimeSeconds()),
+            [RunTable.Units] = TeamUnits.ToItem(run.Units)
         };
     }
 
@@ -63,34 +50,11 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
         return new Run
         {
             RunId = item[RunTable.RunId].S,
-            Version = ToInt32(item[RunTable.Version]),
-            Gold = ToInt32(item[RunTable.Gold]),
-            Tier = ToInt32(item[RunTable.Tier]),
-            ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(ToInt64(item[RunTable.ExpiresAt])),
-            Units =
-            [
-                .. item[RunTable.Units].L.Select(unit => new RunUnit
-                {
-                    Kind = new Kind(unit.M[RunTable.Unit.Kind].S),
-                    Attack = ToInt32(unit.M[RunTable.Unit.Attack]),
-                    Health = ToInt32(unit.M[RunTable.Unit.Health])
-                })
-            ]
+            Version = AttributeValues.ToInt32(item[RunTable.Version]),
+            Gold = AttributeValues.ToInt32(item[RunTable.Gold]),
+            Stage = AttributeValues.ToInt32(item[RunTable.Stage]),
+            ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(AttributeValues.ToInt64(item[RunTable.ExpiresAt])),
+            Units = TeamUnits.FromItem(item[RunTable.Units])
         };
-    }
-
-    private static AttributeValue ToNumber(long value)
-    {
-        return new AttributeValue { N = value.ToString(CultureInfo.InvariantCulture) };
-    }
-
-    private static int ToInt32(AttributeValue value)
-    {
-        return int.Parse(value.N, CultureInfo.InvariantCulture);
-    }
-
-    private static long ToInt64(AttributeValue value)
-    {
-        return long.Parse(value.N, CultureInfo.InvariantCulture);
     }
 }

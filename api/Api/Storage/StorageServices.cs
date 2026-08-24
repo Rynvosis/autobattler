@@ -2,13 +2,13 @@ using Amazon.DynamoDBv2;
 using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 
-namespace Api.Runs;
+namespace Api.Storage;
 
-public static class RunsExtensions
+public static class StorageServices
 {
     private const string ServiceUrlKey = "DynamoDB:ServiceUrl";
 
-    public static IServiceCollection AddRuns(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDynamoDb(this IServiceCollection services, IConfiguration configuration)
     {
         AWSOptions options = configuration.GetAWSOptions();
         string? serviceUrl = configuration[ServiceUrlKey];
@@ -21,15 +21,20 @@ public static class RunsExtensions
 
         services.AddDefaultAWSOptions(options);
         services.AddAWSService<IAmazonDynamoDB>();
-        services.AddSingleton<RunStore>();
 
         return services;
     }
 
-    public static async Task EnsureRunStorageAsync(this WebApplication app)
+    public static async Task EnsureLocalTablesCreatedAsync(this WebApplication app)
     {
         if (string.IsNullOrEmpty(app.Configuration[ServiceUrlKey])) return;
 
-        await RunTableProvisioner.EnsureCreatedAsync(app.Services.GetRequiredService<IAmazonDynamoDB>());
+        IAmazonDynamoDB dynamoDB = app.Services.GetRequiredService<IAmazonDynamoDB>();
+        CancellationToken cancellationToken = app.Lifetime.ApplicationStopping;
+
+        foreach (TableDefinition table in app.Services.GetServices<TableDefinition>())
+        {
+            await TableProvisioner.EnsureCreatedAsync(dynamoDB, table, cancellationToken);
+        }
     }
 }

@@ -1,14 +1,16 @@
 using Api.Runs;
+using Api.Storage;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddRuns(builder.Configuration);
+builder.Services.AddDynamoDb(builder.Configuration);
+builder.Services.AddRuns();
 
 WebApplication app = builder.Build();
 
-await app.EnsureRunStorageAsync();
+await app.EnsureLocalTablesCreatedAsync();
 
 if (app.Environment.IsDevelopment())
 {
