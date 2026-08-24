@@ -5,7 +5,7 @@ using Api.Combat.Events;
 
 namespace Api.Combat.Battles;
 
-public class Scheduler(Board board)
+public class Scheduler(Board board, Roster roster)
 {
     private const int TickCap = 64;
     private const int SubtickCap = 32;
@@ -130,6 +130,6 @@ public class Scheduler(Board board)
     private void Emit(BattleEvent battleEvent)
     {
         _stepEvents.Add(battleEvent with { Tick = _tick, Subtick = _subtick });
-        _effectsNextSubtick.AddRange(TriggerScan.Scan(board, battleEvent));
+        _effectsNextSubtick.AddRange(TriggerScan.Scan(board, roster, battleEvent));
     }
 }

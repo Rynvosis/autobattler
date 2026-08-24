@@ -2,8 +2,8 @@ namespace Api.Combat.Scopes;
 
 public record ScopeRange
 {
-    private int? Start { get; init; }
-    private int? End { get; init; }
+    public int? Start { get; init; }
+    public int? End { get; init; }
 
     public static ScopeRange At(int slot) => new() { Start = slot, End = slot + 1 };
 

@@ -11,4 +11,14 @@ public record Context(Board Board, Unit Owner)
     {
         return [.. Board.Units(side).Where(unit => !unit.Dead)];
     }
+
+    public IEnumerable<Unit> UnitsInIterationOrder()
+    {
+        return Board.UnitsInIterationOrder().Select(entry => entry.unit);
+    }
+
+    public Position PositionOf(Unit unit)
+    {
+        return Board.PositionOf(unit);
+    }
 }

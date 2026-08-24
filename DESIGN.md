@@ -39,27 +39,28 @@ Monsters and undead, drawn as emoji.
 
 ## Terminology
 
-| Term           | Means                                                       |
-|----------------|-------------------------------------------------------------|
-| Run            | One playthrough, addressed by an id                         |
-| Stage          | One round: a shop phase, then a battle                      |
-| Unit           | A monster with its own stats                                |
-| Team           | An ordered queue of units                                   |
-| Ghost          | A stored snapshot of another player's team                  |
-| Slot           | A position in a queue, 0 is the head                        |
-| Content        | The versioned data defining units and abilities             |
-| Ability        | The rules text on a unit. One trigger and one effect        |
-| Gold           | The run currency, spent in the shop                         |
-| Trigger        | An event type, and a scope tested against a participant     |
-| Effect         | A change and a scope                                        |
-| Scope          | A set of units, evaluated when its trigger fires            |
-| `self`         | The unit an ability belongs to                              |
-| `event.source` | The unit that caused an event                               |
-| `event.target` | The unit an event happened to                               |
-| Attack         | A head striking the opposing head, queued by the scheduler  |
-| Event          | A record of something that happened                         |
-| Tick           | One exchange between the two heads                          |
-| Subtick        | One batch of effects resolved together. One animation batch |
+| Term           | Means                                                          |
+|----------------|----------------------------------------------------------------|
+| Run            | One playthrough, addressed by an id                            |
+| Stage          | One round: a shop phase, then a battle                         |
+| Unit           | A monster with its own stats                                   |
+| Kind           | The id of a unit's definition, shared by every unit of it      |
+| Team           | An ordered queue of units                                      |
+| Ghost          | A stored snapshot of another player's team                     |
+| Slot           | A position in a queue, 0 is the head                           |
+| Content        | The versioned data defining units and abilities                |
+| Ability        | The rules text on a unit. One trigger, and effects with scopes |
+| Gold           | The run currency, spent in the shop                            |
+| Trigger        | An event type, and a scope tested against a participant        |
+| Effect         | A change to the board                                          |
+| Scope          | A set of units, evaluated when its trigger fires               |
+| `self`         | The unit an ability belongs to                                 |
+| `event.source` | The unit that caused an event                                  |
+| `event.target` | The unit an event happened to                                  |
+| Attack         | A head striking the opposing head, queued by the scheduler     |
+| Event          | A record of something that happened                            |
+| Tick           | One exchange between the two heads                             |
+| Subtick        | One batch of effects resolved together. One animation batch    |
 
 ## Combat
 

@@ -25,13 +25,3 @@ public static class Walk
         return (context.Units(position.Side), position.Slot);
     }
 }
-
-public static class ScopeSideExtensions
-{
-    public static Side SideIn(this ScopeSide scopeSide, Context context)
-    {
-        Side ownerSide = context.Board.PositionOf(context.Owner).Side;
-
-        return scopeSide == ScopeSide.Ally ? ownerSide : ownerSide.Opposite();
-    }
-}

@@ -1,6 +1,5 @@
-using Api.Combat.Abilities;
-using Api.Combat.Scopes;
 using Api.Combat.Effects;
+using Api.Combat.Scopes;
 
 namespace Api.Combat.Tests;
 
@@ -52,7 +51,7 @@ public class ValueTests
 
         UnitStat<UnitHurtEvent> value = new()
         {
-            Subject = One<UnitHurtEvent>.Of(new EventUnit<UnitHurtEvent> { Participant = new EventSource() }),
+            Subject = One<UnitHurtEvent>.Of(new EventSource()),
             Stat = Stat.Attack
         };
 
@@ -73,7 +72,10 @@ public class ValueTests
         owner.Attack = 3;
         recipient.Health = 10;
 
-        Damage<StartEvent> damage = new() { Value = new UnitStat<StartEvent> { Subject = One<StartEvent>.Of(new Self()), Stat = Stat.Attack } };
+        Damage<StartEvent> damage = new()
+        {
+            Value = new UnitStat<StartEvent> { Subject = One<StartEvent>.Of(new Self()), Stat = Stat.Attack }
+        };
         IReadOnlyList<BattleEvent> events = damage.Apply(new Context(board, owner), Start, recipient);
 
         Assert.Equal(7, recipient.Health);

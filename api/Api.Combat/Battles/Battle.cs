@@ -1,3 +1,4 @@
+using Api.Combat.Abilities;
 using Api.Combat.Battlefield;
 using Api.Combat.Events;
 
@@ -6,17 +7,19 @@ namespace Api.Combat.Battles;
 public class Battle
 {
     private readonly Board _board;
-    private readonly Scheduler _scheduler;
     private readonly List<BattleEvent> _events = [];
+    private readonly Scheduler _scheduler;
 
-    private Battle(Team player, Team ghost)
+    private Battle(Team player, Team ghost, Roster roster)
     {
         _board = new Board(player, ghost);
-        _scheduler = new Scheduler(_board);
+        _scheduler = new Scheduler(_board, roster);
     }
 
-    public static BattleResult Resolve(Team player, Team ghost) =>
-        new Battle(player, ghost).Run();
+    public static BattleResult Resolve(Team player, Team ghost, Roster roster)
+    {
+        return new Battle(player, ghost, roster).Run();
+    }
 
     private BattleResult Run()
     {
