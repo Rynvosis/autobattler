@@ -38,12 +38,25 @@ public static class RunEndpoints
             return Results.NotFound();
         }
 
+        if (run.Finished) return Results.BadRequest();
+
         Team player = TeamUnits.ToTeam(run.Units, 0);
-        Team ghost = await FindGhostTeamAsync(ghosts, run, cancellationToken);
+        Team opponent = await Opponents.FindOrCreateTeamAsync(ghosts, run, cancellationToken);
 
-        BattleResult result = Battle.Resolve(player, ghost, Monsters.Roster);
+        BattleResult result = Battle.Resolve(player, opponent, Monsters.Roster);
 
-        // TODO: apply the outcome to the run, store a ghost of the team, and write both back.
+        // The ghost is written first so a crash between the writes leaves a stale ghost rather
+        // than an uncredited battle.
+        await ghosts.PutAsync(new Ghost
+        {
+            Stage = run.Stage,
+            RunId = run.RunId,
+            ExpiresAt = run.ExpiresAt,
+            Units = run.Units
+        }, cancellationToken);
+
+        await runs.PutAsync(run.AfterBattle(result.Outcome), cancellationToken);
+
         return Results.Ok(result);
     }
 
@@ -66,22 +79,8 @@ public static class RunEndpoints
     {
         return
         [
-            UnitOf(Monsters.Golem),
-            UnitOf(Monsters.Goblin)
+            TeamUnits.From(Monsters.Golem),
+            TeamUnits.From(Monsters.Goblin)
         ];
     }
-
-    private static TeamUnit UnitOf(UnitDefinition definition)
-    {
-        return new TeamUnit
-        {
-            Kind = definition.Kind,
-            Attack = definition.Attack,
-            Health = definition.Health
-        };
-    }
-
-    // TODO: the opponent when the stage holds no ghost.
-    private static Task<Team> FindGhostTeamAsync(GhostStore ghosts, Run run, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
 }

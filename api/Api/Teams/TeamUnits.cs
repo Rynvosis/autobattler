@@ -1,6 +1,7 @@
 using Amazon.DynamoDBv2.Model;
 using Api.Combat.Battlefield;
 using Api.Combat.Units;
+using Api.Content;
 using Api.Storage;
 
 namespace Api.Teams;
@@ -44,6 +45,16 @@ public static class TeamUnits
                 Health = unit.Health
             })
         ]);
+
+    public static TeamUnit From(UnitDefinition definition)
+    {
+        return new TeamUnit
+        {
+            Kind = definition.Kind,
+            Attack = definition.Attack,
+            Health = definition.Health
+        };
+    }
 
     private static class Attributes
     {
