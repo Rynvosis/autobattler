@@ -1,4 +1,4 @@
-namespace Api.Combat;
+namespace Api.Combat.Battlefield;
 
 public record Context(Board Board, Unit Owner)
 {

@@ -1,4 +1,4 @@
-namespace Api.Combat;
+namespace Api.Combat.Units;
 
 public enum Stat
 {

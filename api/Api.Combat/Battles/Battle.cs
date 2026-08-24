@@ -1,7 +1,7 @@
+using Api.Combat.Battlefield;
 using Api.Combat.Events;
-using Api.Combat.Scheduling;
 
-namespace Api.Combat;
+namespace Api.Combat.Battles;
 
 public class Battle
 {

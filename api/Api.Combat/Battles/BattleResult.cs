@@ -1,6 +1,6 @@
 using Api.Combat.Events;
 
-namespace Api.Combat;
+namespace Api.Combat.Battles;
 
 public record BattleResult
 {

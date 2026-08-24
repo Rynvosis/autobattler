@@ -1,6 +1,6 @@
 using Api.Combat.Abilities;
 
-namespace Api.Combat;
+namespace Api.Combat.Units;
 
 public class Unit
 {

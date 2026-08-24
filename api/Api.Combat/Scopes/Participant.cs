@@ -1,6 +1,6 @@
 using Api.Combat.Events;
 
-namespace Api.Combat.Abilities;
+namespace Api.Combat.Scopes;
 
 public interface IParticipant<in TEvent> where TEvent : UnitEvent
 {

@@ -1,4 +1,4 @@
-namespace Api.Combat;
+namespace Api.Combat.Battlefield;
 
 public enum Side
 {

@@ -1,8 +1,8 @@
-using Api.Combat.Abilities.Scopes;
-using Api.Combat.Effects;
+using Api.Combat.Battlefield;
 using Api.Combat.Events;
+using Api.Combat.Scopes;
 
-namespace Api.Combat.Abilities;
+namespace Api.Combat.Effects;
 
 public sealed record ScopedEffect<TEvent> where TEvent : BattleEvent
 {

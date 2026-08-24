@@ -1,6 +1,7 @@
+using Api.Combat.Battlefield;
 using Api.Combat.Events;
 
-namespace Api.Combat.Abilities.Scopes;
+namespace Api.Combat.Scopes;
 
 public interface IRelation<in TEvent> where TEvent : BattleEvent
 {

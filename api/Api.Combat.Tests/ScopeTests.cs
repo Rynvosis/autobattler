@@ -1,5 +1,5 @@
 using Api.Combat.Abilities;
-using Api.Combat.Abilities.Scopes;
+using Api.Combat.Scopes;
 
 namespace Api.Combat.Tests;
 
