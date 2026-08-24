@@ -8,6 +8,8 @@ Monsters have an Attack stat, a Health stat and an Ability.
 - Battle phase: monsters fight in a queue. Heads attack each tick, abilities react.
 - A run is five stages. A win counts a victory, and every result pays gold.
 - A unit costs 2 gold and a reroll 1. A run opens on 7, and a stage pays 6 for a win, 5 for a draw, 4 for a loss.
+- A team holds five units.
+- The shop also sells a +1/+1 upgrade for 2, and a copy of a unit you own at its base stats for 6.
 
 ## Scope
 
@@ -49,6 +51,7 @@ Monsters and undead, drawn as emoji.
 | Kind           | The id of a unit's definition, shared by every unit of it      |
 | Team           | An ordered queue of units                                      |
 | Ghost          | A stored snapshot of another player's team                     |
+| Filler         | A ghost the server builds when a stage holds no other team     |
 | Slot           | A position in a queue, 0 is the head                           |
 | Content        | The versioned data defining units and abilities                |
 | Ability        | The rules text on a unit. One trigger, and effects with scopes |

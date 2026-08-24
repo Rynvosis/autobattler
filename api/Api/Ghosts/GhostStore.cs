@@ -7,6 +7,8 @@ namespace Api.Ghosts;
 
 public sealed class GhostStore(IAmazonDynamoDB dynamoDB)
 {
+    private const int PageSize = 20;
+
     public Task PutAsync(Ghost ghost, CancellationToken cancellationToken)
     {
         return dynamoDB.PutItemAsync(new PutItemRequest
@@ -16,9 +18,29 @@ public sealed class GhostStore(IAmazonDynamoDB dynamoDB)
         }, cancellationToken);
     }
 
-    // TODO: choose among the ghosts on the stage, excluding the run's own.
-    public Task<Ghost?> FindOpponentAsync(int stage, string excludingRunId, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
+    // The run's own ghost is dropped here because DynamoDB rejects key attributes in a filter.
+    public async Task<IReadOnlyList<Ghost>> FindOpponentsAsync(
+        int stage,
+        string excludingRunId,
+        CancellationToken cancellationToken)
+    {
+        QueryResponse response = await dynamoDB.QueryAsync(new QueryRequest
+        {
+            TableName = GhostTable.TableName,
+            KeyConditionExpression = "#stage = :stage",
+            ExpressionAttributeNames = new Dictionary<string, string>
+            {
+                ["#stage"] = GhostTable.Stage
+            },
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                [":stage"] = AttributeValues.Number(stage)
+            },
+            Limit = PageSize
+        }, cancellationToken);
+
+        return [.. response.Items.Select(FromItem).Where(ghost => ghost.RunId != excludingRunId)];
+    }
 
     private static Dictionary<string, AttributeValue> ToItem(Ghost ghost)
     {

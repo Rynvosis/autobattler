@@ -1,3 +1,4 @@
+using Api.Combat.Battles;
 using Api.Teams;
 
 namespace Api.Runs;
@@ -13,4 +14,15 @@ public sealed record Run
     public required IReadOnlyList<TeamUnit> Units { get; init; }
 
     public bool Finished => Stage > Economy.TotalStages;
+
+    public Run AfterBattle(BattleOutcome outcome)
+    {
+        return this with
+        {
+            Version = Version + 1,
+            Victories = outcome == BattleOutcome.Win ? Victories + 1 : Victories,
+            Gold = Gold + Economy.GoldFor(outcome),
+            Stage = Stage + 1
+        };
+    }
 }
