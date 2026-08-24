@@ -1,3 +1,4 @@
+using Api.Ghosts;
 using Api.Runs;
 using Api.Storage;
 
@@ -7,6 +8,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDynamoDb(builder.Configuration);
 builder.Services.AddRuns();
+builder.Services.AddGhosts();
 
 WebApplication app = builder.Build();
 
@@ -19,6 +21,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.MapRuns();
 
 app.Run();
 
