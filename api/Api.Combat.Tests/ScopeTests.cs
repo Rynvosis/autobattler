@@ -1,27 +1,29 @@
-using Api.Combat.Abilities;
 using Api.Combat.Scopes;
 
 namespace Api.Combat.Tests;
 
 public class ScopeTests
 {
-    private static One<UnitHurtEvent> Anchor(IRelation<UnitHurtEvent> relation) => One<UnitHurtEvent>.Of(relation);
-
     public static TheoryData<IRelation<UnitHurtEvent>, ScopeRange, int, int, int, int[]> EveryCases => new()
     {
         { new Self(), ScopeRange.From(0), 0, 1, 3, [0] },
         { new FromHead { Side = ScopeSide.Enemy }, ScopeRange.At(0), 0, 1, 3, [1] },
         { new FromTail { Side = ScopeSide.Ally }, ScopeRange.At(0), 0, 1, 3, [4] },
         { new FromHead { Side = ScopeSide.Ally }, ScopeRange.From(0), 0, 1, 3, [0, 2, 4] },
-        { new EventUnit<UnitHurtEvent> { Participant = new EventSource() }, ScopeRange.From(0), 0, 3, 1, [3] },
-        { new EventUnit<UnitHurtEvent> { Participant = new EventTarget() }, ScopeRange.From(0), 0, 1, 4, [4] },
+        { new EventSource(), ScopeRange.From(0), 0, 3, 1, [3] },
+        { new EventTarget(), ScopeRange.From(0), 0, 1, 4, [4] },
         { new Behind<UnitHurtEvent> { Anchor = Anchor(new Self()) }, ScopeRange.At(0), 0, 1, 3, [2] },
         { new Ahead<UnitHurtEvent> { Anchor = Anchor(new Self()) }, ScopeRange.At(0), 4, 1, 3, [2] },
         {
-            new Behind<UnitHurtEvent> { Anchor = Anchor(new EventUnit<UnitHurtEvent> { Participant = new EventSource() }) },
+            new Behind<UnitHurtEvent> { Anchor = Anchor(new EventSource()) },
             ScopeRange.At(0), 0, 3, 1, [5]
         },
     };
+
+    private static One<UnitHurtEvent> Anchor(IRelation<UnitHurtEvent> relation)
+    {
+        return One<UnitHurtEvent>.Of(relation);
+    }
 
     [Theory]
     [MemberData(nameof(EveryCases))]
@@ -80,7 +82,7 @@ public class ScopeTests
         Board board = Boards.ThreeVersusThree();
         Boards.Find(board, 3).Dead = true;
 
-        One<UnitHurtEvent> anchor = Anchor(new EventUnit<UnitHurtEvent> { Participant = new EventSource() });
+        One<UnitHurtEvent> anchor = Anchor(new EventSource());
 
         Unit? resolved = anchor.Of(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 3, 1));
 
@@ -97,5 +99,27 @@ public class ScopeTests
         Any<UnitHurtEvent> scope = new() { Relation = new FromHead { Side = ScopeSide.Ally } };
 
         Assert.True(scope.Contains(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 1, 3), dead));
+    }
+
+    [Fact]
+    public void Every_OfKind_KeepsOnlyThatKind()
+    {
+        Board board = new(
+            new Team([Boards.Unit(0, "goblin"), Boards.Unit(2), Boards.Unit(4, "goblin")]),
+            new Team([Boards.Unit(1, "goblin")]));
+
+        Every<UnitHurtEvent> scope = new()
+        {
+            Relation = new OfKind<UnitHurtEvent>
+            {
+                Relation = new FromHead { Side = ScopeSide.Ally },
+                Kind = new Kind("goblin")
+            }
+        };
+
+        IReadOnlyList<Unit> resolved =
+            scope.Of(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 1, 0));
+
+        Assert.Equal([0, 4], resolved.Select(unit => unit.Id));
     }
 }

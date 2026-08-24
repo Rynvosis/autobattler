@@ -13,11 +13,6 @@ public sealed record ScopedEffect<TEvent> where TEvent : BattleEvent
     {
         HashSet<Unit> selected = [.. Scopes.SelectMany(scope => scope.Of(context, battleEvent))];
 
-        return
-        [
-            .. context.Board.UnitsInIterationOrder()
-                .Select(entry => entry.unit)
-                .Where(selected.Contains)
-        ];
+        return [.. context.UnitsInIterationOrder().Where(selected.Contains)];
     }
 }

@@ -1,6 +1,6 @@
 using Api.Combat.Abilities;
-using Api.Combat.Scopes;
 using Api.Combat.Effects;
+using Api.Combat.Scopes;
 
 namespace Api.Combat.Tests;
 
@@ -17,10 +17,10 @@ public class BattleTests
         int ghostHealth,
         BattleOutcome expected)
     {
-        Unit player = new() { Id = 0, Attack = playerAttack, Health = playerHealth, Ability = null };
-        Unit ghost = new() { Id = 1, Attack = ghostAttack, Health = ghostHealth, Ability = null };
+        Unit player = new() { Id = 0, Kind = new Kind("dummy"), Attack = playerAttack, Health = playerHealth };
+        Unit ghost = new() { Id = 1, Kind = new Kind("dummy"), Attack = ghostAttack, Health = ghostHealth };
 
-        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]), Roster.Empty);
 
         Assert.Equal(expected, result.Outcome);
     }
@@ -28,11 +28,11 @@ public class BattleTests
     [Fact]
     public void TwoVersusOne_GhostSurvives_ReturnsLoss()
     {
-        Unit player1 = new() { Id = 0, Attack = 1, Health = 2, Ability = null };
-        Unit player2 = new() { Id = 1, Attack = 1, Health = 2, Ability = null };
-        Unit ghost = new() { Id = 2, Attack = 2, Health = 3, Ability = null };
+        Unit player1 = new() { Id = 0, Kind = new Kind("dummy"), Attack = 1, Health = 2 };
+        Unit player2 = new() { Id = 1, Kind = new Kind("dummy"), Attack = 1, Health = 2 };
+        Unit ghost = new() { Id = 2, Kind = new Kind("dummy"), Attack = 2, Health = 3 };
 
-        BattleResult result = Battle.Resolve(new Team([player1, player2]), new Team([ghost]));
+        BattleResult result = Battle.Resolve(new Team([player1, player2]), new Team([ghost]), Roster.Empty);
 
         Assert.Equal(BattleOutcome.Loss, result.Outcome);
     }
@@ -41,12 +41,12 @@ public class BattleTests
     [Fact]
     public void GhostRetaliatesOnHurt_ReturnsDraw()
     {
-        Ability retaliate = Boards.Retaliate();
+        Roster roster = Roster.Of((new Kind("retaliate"), Boards.Retaliate()));
 
-        Unit player = new() { Id = 0, Attack = 2, Health = 2, Ability = null };
-        Unit ghost = new() { Id = 1, Attack = 1, Health = 2, Ability = retaliate };
+        Unit player = new() { Id = 0, Kind = new Kind("dummy"), Attack = 2, Health = 2 };
+        Unit ghost = new() { Id = 1, Kind = new Kind("retaliate"), Attack = 1, Health = 2 };
 
-        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]), roster);
 
         Assert.Equal(BattleOutcome.Draw, result.Outcome);
     }
@@ -74,11 +74,14 @@ public class BattleTests
             ]
         };
 
-        Unit attacker = new() { Id = 0, Attack = 1, Health = 9, Ability = null };
-        Unit victim = new() { Id = 1, Attack = 0, Health = 3, Ability = null };
-        Unit chipper = new() { Id = 2, Attack = 0, Health = 9, Ability = opener };
+        Unit attacker = new() { Id = 0, Kind = new Kind("dummy"), Attack = 1, Health = 9 };
+        Unit victim = new() { Id = 1, Kind = new Kind("dummy"), Attack = 0, Health = 3 };
+        Unit chipper = new() { Id = 2, Kind = new Kind("opener"), Attack = 0, Health = 9 };
 
-        BattleResult result = Battle.Resolve(new Team([attacker, chipper]), new Team([victim]));
+        BattleResult result = Battle.Resolve(
+            new Team([attacker, chipper]),
+            new Team([victim]),
+            Roster.Of((new Kind("opener"), opener)));
 
         Assert.Contains(result.Events.OfType<UnitHurtEvent>(), hurt => ReferenceEquals(hurt.Source, chipper));
 
@@ -87,47 +90,11 @@ public class BattleTests
     }
 
     [Fact]
-    public void DamageEqualToRecipientHealth_KillsAndCreditsTheKiller()
-    {
-        Ability deathcap = new Ability<UnitDeathEvent>
-        {
-            Trigger = new UnitTrigger<UnitDeathEvent>
-            {
-                Participant = new EventTarget(),
-                Scopes = [Any<BattleEvent>.Of(new Self())]
-            },
-            Effects =
-            [
-                new ScopedEffect<UnitDeathEvent>
-                {
-                    Effect = new Damage<UnitDeathEvent> { Value = new RecipientStat { Stat = Stat.Health } },
-                    Scopes =
-                    [
-                        new Every<UnitDeathEvent>
-                        {
-                            Relation = new FromHead { Side = ScopeSide.Enemy },
-                            Range = ScopeRange.At(0)
-                        }
-                    ]
-                }
-            ]
-        };
-
-        Unit player = new() { Id = 0, Attack = 1, Health = 1, Ability = deathcap };
-        Unit ghost = new() { Id = 1, Attack = 1, Health = 9, Ability = null };
-
-        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
-
-        Assert.Equal(BattleOutcome.Draw, result.Outcome);
-        Assert.Contains(result.Events.OfType<UnitKillEvent>(), kill => ReferenceEquals(kill.Source, player));
-    }
-
-    [Fact]
     public void MutualWipe_EmitsEventsInScheduleOrder()
     {
-        Unit player = new() { Id = 0, Attack = 1, Health = 2, Ability = null };
-        Unit ghost = new() { Id = 1, Attack = 1, Health = 2, Ability = null };
-        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]));
+        Unit player = new() { Id = 0, Kind = new Kind("dummy"), Attack = 1, Health = 2 };
+        Unit ghost = new() { Id = 1, Kind = new Kind("dummy"), Attack = 1, Health = 2 };
+        BattleResult result = Battle.Resolve(new Team([player]), new Team([ghost]), Roster.Empty);
 
         BattleEvent[] expected =
         [

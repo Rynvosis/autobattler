@@ -13,13 +13,6 @@ public sealed record Self : IRelation<BattleEvent>
     public IEnumerable<Unit> Of(Context context, BattleEvent battleEvent) => [context.Owner];
 }
 
-public sealed record EventUnit<TEvent> : IRelation<TEvent> where TEvent : UnitEvent
-{
-    public required IParticipant<TEvent> Participant { get; init; }
-
-    public IEnumerable<Unit> Of(Context context, TEvent battleEvent) => [Participant.Of(battleEvent)];
-}
-
 public sealed record FromHead : IRelation<BattleEvent>
 {
     public required ScopeSide Side { get; init; }
@@ -49,4 +42,15 @@ public sealed record Behind<TEvent> : IRelation<TEvent> where TEvent : BattleEve
 
     public IEnumerable<Unit> Of(Context context, TEvent battleEvent) =>
         Anchor.Of(context, battleEvent) is { } anchor ? Walk.Behind(context, anchor) : [];
+}
+
+public sealed record OfKind<TEvent> : IRelation<TEvent> where TEvent : BattleEvent
+{
+    public required IRelation<TEvent> Relation { get; init; }
+    public required Kind Kind { get; init; }
+
+    public IEnumerable<Unit> Of(Context context, TEvent battleEvent)
+    {
+        return Relation.Of(context, battleEvent).Where(unit => unit.Kind == Kind);
+    }
 }

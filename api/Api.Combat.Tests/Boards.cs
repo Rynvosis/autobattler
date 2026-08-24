@@ -1,6 +1,6 @@
 using Api.Combat.Abilities;
-using Api.Combat.Scopes;
 using Api.Combat.Effects;
+using Api.Combat.Scopes;
 
 namespace Api.Combat.Tests;
 
@@ -11,8 +11,10 @@ public static class Boards
             new Team([Unit(0), Unit(2), Unit(4)]),
             new Team([Unit(1), Unit(3), Unit(5)]));
 
-    public static Unit Unit(int id, Ability? ability = null) =>
-        new() { Id = id, Attack = 1, Health = 1, Ability = ability };
+    public static Unit Unit(int id, string kind = "dummy")
+    {
+        return new Unit { Id = id, Kind = new Kind(kind), Attack = 1, Health = 1 };
+    }
 
     public static Unit Find(Board board, int id) =>
         board.UnitsInIterationOrder().First(entry => entry.unit.Id == id).unit;
@@ -33,10 +35,7 @@ public static class Boards
                 new ScopedEffect<UnitHurtEvent>
                 {
                     Effect = new Damage<UnitHurtEvent> { Value = Literal.Of(1) },
-                    Scopes =
-                    [
-                        Every<UnitHurtEvent>.Of(new EventUnit<UnitHurtEvent> { Participant = new EventSource() })
-                    ]
+                    Scopes = [Every<UnitHurtEvent>.Of(new EventSource())]
                 }
             ]
         };

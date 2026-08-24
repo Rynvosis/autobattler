@@ -5,30 +5,34 @@ namespace Api.Combat.Tests;
 
 public class TriggerScanTests
 {
-    private static Board BoardWith(Ability ability, int ownerId) =>
-        new(
-            new Team([Boards.Unit(0, ownerId == 0 ? ability : null), Boards.Unit(2)]),
+    private static readonly Roster Roster = Roster.Of((new Kind("hero"), Boards.Retaliate()));
+
+    private static Board BoardWith(int ownerId)
+    {
+        return new Board(
+            new Team([Boards.Unit(0, ownerId == 0 ? "hero" : "dummy"), Boards.Unit(2)]),
             new Team([Boards.Unit(1), Boards.Unit(3)]));
+    }
 
     [Fact]
     public void Scan_EventOfAnotherType_QueuesNothing()
     {
-        Board board = BoardWith(Boards.Retaliate(), 0);
+        Board board = BoardWith(0);
         Unit owner = Boards.Find(board, 0);
 
-        Assert.Empty(TriggerScan.Scan(board, new UnitDeathEvent { Target = owner }));
-        Assert.Empty(TriggerScan.Scan(board, new StartEvent()));
+        Assert.Empty(TriggerScan.Scan(board, Roster, new UnitDeathEvent { Target = owner }));
+        Assert.Empty(TriggerScan.Scan(board, Roster, new StartEvent()));
     }
 
     [Fact]
     public void Scan_MatchingTrigger_QueuesEffectAtTheAbilityOwner()
     {
-        Board board = BoardWith(Boards.Retaliate(), 0);
+        Board board = BoardWith(0);
         Unit owner = Boards.Find(board, 0);
         Unit dealer = Boards.Find(board, 1);
 
         IReadOnlyList<QueuedEffect> queued =
-            TriggerScan.Scan(board, new UnitHurtEvent { Source = dealer, Target = owner, Value = 1 });
+            TriggerScan.Scan(board, Roster, new UnitHurtEvent { Source = dealer, Target = owner, Value = 1 });
 
         QueuedEffect only = Assert.Single(queued);
         Assert.Equal(owner, only.Context.Owner);
@@ -38,12 +42,12 @@ public class TriggerScanTests
     [Fact]
     public void Scan_TriggerOnAnotherUnit_QueuesNothing()
     {
-        Board board = BoardWith(Boards.Retaliate(), 0);
+        Board board = BoardWith(0);
         Unit other = Boards.Find(board, 2);
         Unit dealer = Boards.Find(board, 1);
 
         IReadOnlyList<QueuedEffect> queued =
-            TriggerScan.Scan(board, new UnitHurtEvent { Source = dealer, Target = other, Value = 1 });
+            TriggerScan.Scan(board, Roster, new UnitHurtEvent { Source = dealer, Target = other, Value = 1 });
 
         Assert.Empty(queued);
     }
@@ -51,13 +55,13 @@ public class TriggerScanTests
     [Fact]
     public void Scan_OwnerDiedThisSubtick_StillQueuesItsEffect()
     {
-        Board board = BoardWith(Boards.Retaliate(), 0);
+        Board board = BoardWith(0);
         Unit owner = Boards.Find(board, 0);
         Unit dealer = Boards.Find(board, 1);
         owner.Dead = true;
 
         IReadOnlyList<QueuedEffect> queued =
-            TriggerScan.Scan(board, new UnitHurtEvent { Source = dealer, Target = owner, Value = 1 });
+            TriggerScan.Scan(board, Roster, new UnitHurtEvent { Source = dealer, Target = owner, Value = 1 });
 
         QueuedEffect only = Assert.Single(queued);
         Assert.Equal(owner, only.Context.Owner);
@@ -67,13 +71,13 @@ public class TriggerScanTests
     [Fact]
     public void Scan_DeadTargetInScope_ResolvesToNoTargets()
     {
-        Board board = BoardWith(Boards.Retaliate(), 0);
+        Board board = BoardWith(0);
         Unit owner = Boards.Find(board, 0);
         Unit dealer = Boards.Find(board, 1);
         dealer.Dead = true;
 
         IReadOnlyList<QueuedEffect> queued =
-            TriggerScan.Scan(board, new UnitHurtEvent { Source = dealer, Target = owner, Value = 1 });
+            TriggerScan.Scan(board, Roster, new UnitHurtEvent { Source = dealer, Target = owner, Value = 1 });
 
         QueuedEffect only = Assert.Single(queued);
         Assert.Empty(only.Targets);
