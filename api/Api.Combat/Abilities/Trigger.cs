@@ -10,19 +10,18 @@ public abstract record Trigger<TEvent> where TEvent : BattleEvent
 
 public sealed record RoundTrigger<TEvent> : Trigger<TEvent> where TEvent : RoundEvent
 {
-    public override bool Matches(TEvent battleEvent, Context context)
-    {
-        return true;
-    }
+    public override bool Matches(TEvent battleEvent, Context context) => true;
 }
 
 public sealed record UnitTrigger<TEvent> : Trigger<TEvent> where TEvent : UnitEvent
 {
     public required IParticipant<TEvent> Participant { get; init; }
-    public required IReadOnlyList<ITriggerScope> Scopes { get; init; }
+    public required IReadOnlyList<Any<BattleEvent>> Scopes { get; init; }
 
     public override bool Matches(TEvent battleEvent, Context context)
     {
-        return ScopeResolver.Resolve(Scopes, context).Contains(Participant.Of(battleEvent));
+        Unit participant = Participant.Of(battleEvent);
+
+        return Scopes.Any(scope => scope.Contains(context, battleEvent, participant));
     }
 }

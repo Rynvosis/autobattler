@@ -11,7 +11,7 @@ public static class TriggerScan
 
         foreach ((Unit unit, Position _) in board.UnitsInIterationOrder())
         {
-            if (unit.Ability?.Fire(new Context(board, unit), battleEvent) is { } queued) effects.Add(queued);
+            if (unit.Ability is { } ability) effects.AddRange(ability.Fire(new Context(board, unit), battleEvent));
         }
 
         return effects;
