@@ -81,7 +81,6 @@ public sealed class OpponentsTests(ApiFixture fixture) : ApiTests(fixture)
         return new Run
         {
             RunId = "test-run",
-            Version = 1,
             Victories = 0,
             Gold = Economy.StartingGold,
             Stage = stage,

@@ -20,9 +20,7 @@ public static class RunEndpoints
 
     private static async Task<IResult> CreateRun(RunStore runs, CancellationToken cancellationToken)
     {
-        Run run = StartRun(Guid.NewGuid().ToString());
-
-        await runs.PutAsync(run, cancellationToken);
+        Run run = await runs.CreateAsync(StartRun(Guid.NewGuid().ToString()), cancellationToken);
 
         return Results.Created($"/runs/{run.RunId}", run);
     }
@@ -70,21 +68,26 @@ public static class RunEndpoints
             Units = run.Units
         }, cancellationToken);
 
-        Run fought = run.AfterBattle(result.Outcome);
-
-        await runs.PutAsync(fought, cancellationToken);
-
-        return Results.Ok(new BattleResponse
+        try
         {
-            Run = fought,
-            Battle = new BattleRecord
+            Run updated = await runs.UpdateAsync(run.AfterBattle(result.Outcome), cancellationToken);
+
+            return Results.Ok(new BattleResponse
             {
-                Outcome = result.Outcome,
-                Player = playerUnits,
-                Opponent = opponentUnits,
-                Events = EventRecords.From(result.Events)
-            }
-        });
+                Run = updated,
+                Battle = new BattleRecord
+                {
+                    Outcome = result.Outcome,
+                    Player = playerUnits,
+                    Opponent = opponentUnits,
+                    Events = EventRecords.From(result.Events)
+                }
+            });
+        }
+        catch (RunConflictException conflict)
+        {
+            return Results.Json(conflict.Stored, statusCode: StatusCodes.Status409Conflict);
+        }
     }
 
     private static Run StartRun(string runId)
@@ -92,7 +95,6 @@ public static class RunEndpoints
         return new Run
         {
             RunId = runId,
-            Version = 1,
             Victories = 0,
             Gold = Economy.StartingGold,
             Stage = 1,
