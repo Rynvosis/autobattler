@@ -27,7 +27,8 @@ public sealed record Ability<TEvent> : Ability where TEvent : BattleEvent
                 Effect = scoped.Effect,
                 Event = typed,
                 Context = context,
-                Targets = scoped.Targets(context, typed)
+                Targets = scoped.Targets(context, typed),
+                Cause = Cause.Ability(context.Owner)
             })
         ];
     }

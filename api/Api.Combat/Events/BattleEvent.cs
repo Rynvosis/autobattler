@@ -4,6 +4,7 @@ public abstract record BattleEvent
 {
     public int Tick { get; init; }
     public int Subtick { get; init; }
+    public Cause Cause { get; init; }
 }
 
 public abstract record RoundEvent : BattleEvent;

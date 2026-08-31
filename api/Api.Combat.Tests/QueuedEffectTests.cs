@@ -11,7 +11,8 @@ public class QueuedEffectTests
             Effect = new Damage<StartEvent> { Value = Literal.Of(1) },
             Event = new StartEvent(),
             Context = new Context(board, owner),
-            Targets = targets
+            Targets = targets,
+            Cause = Cause.Ability(owner)
         };
     }
 

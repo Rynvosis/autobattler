@@ -7,6 +7,7 @@ public abstract record QueuedEffect
 {
     public required Context Context { get; init; }
     public required IReadOnlyList<Unit> Targets { get; init; }
+    public required Cause Cause { get; init; }
 
     public abstract IReadOnlyList<BattleEvent> Apply();
 }

@@ -1,3 +1,4 @@
+using Api.Battles;
 using Api.Combat.Battlefield;
 using Api.Combat.Battles;
 using Api.Content;
@@ -43,6 +44,10 @@ public static class RunEndpoints
         Team player = TeamUnits.ToTeam(run.Units, 0);
         Team opponent = await Opponents.FindOrCreateTeamAsync(ghosts, run, cancellationToken);
 
+        // Take both teams before resolving; the battle mutates the units it is given.
+        IReadOnlyList<UnitRecord> playerUnits = UnitRecords.From(player);
+        IReadOnlyList<UnitRecord> opponentUnits = UnitRecords.From(opponent);
+
         BattleResult result = Battle.Resolve(player, opponent, Monsters.Roster);
 
         // The ghost is written first so a crash between the writes leaves a stale ghost rather
@@ -55,9 +60,21 @@ public static class RunEndpoints
             Units = run.Units
         }, cancellationToken);
 
-        await runs.PutAsync(run.AfterBattle(result.Outcome), cancellationToken);
+        Run fought = run.AfterBattle(result.Outcome);
 
-        return Results.Ok(result);
+        await runs.PutAsync(fought, cancellationToken);
+
+        return Results.Ok(new BattleResponse
+        {
+            Run = fought,
+            Battle = new BattleRecord
+            {
+                Outcome = result.Outcome,
+                Player = playerUnits,
+                Opponent = opponentUnits,
+                Events = EventRecords.From(result.Events)
+            }
+        });
     }
 
     private static Run StartRun(string runId)

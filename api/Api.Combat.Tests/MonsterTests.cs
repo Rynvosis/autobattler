@@ -91,6 +91,27 @@ public class MonsterTests
     }
 
     [Fact]
+    public void Wyrm_WhenItAttacks_CreditsItsStrikeAndItsAbilitySeparately()
+    {
+        Unit wyrm = Monster(0, Monsters.Wyrm);
+        Unit head = Dummy(1, 0, 2);
+        Unit second = Dummy(2, 0, 2);
+
+        BattleResult result = Battle.Resolve(new Team([wyrm]), new Team([head, second]), Monsters.Roster);
+
+        UnitHurtEvent strike = Assert.Single(
+            result.Events.OfType<UnitHurtEvent>(),
+            hurt => ReferenceEquals(hurt.Target, head));
+
+        UnitHurtEvent ability = Assert.Single(
+            result.Events.OfType<UnitHurtEvent>(),
+            hurt => ReferenceEquals(hurt.Target, second));
+
+        Assert.Equal(Cause.Attack(wyrm), strike.Cause);
+        Assert.Equal(Cause.Ability(wyrm), ability.Cause);
+    }
+
+    [Fact]
     public void Vampire_WhenItAttacks_GainsOneHealth()
     {
         Unit vampire = Monster(0, Monsters.Vampire);
