@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Api.Ghosts;
 using Api.Runs;
 
@@ -21,6 +22,17 @@ public sealed class RunEndpointsTests : ApiTests
         Assert.Equal(Economy.StartingGold, run.Gold);
         Assert.NotEmpty(run.Units);
         Assert.False(run.Finished);
+    }
+
+    [Fact]
+    public async Task CreateRun_WritesAUnitKindAsAString()
+    {
+        HttpResponseMessage response = await PostRunAsync();
+
+        JsonElement run = await response.Content.ReadFromJsonAsync<JsonElement>();
+        JsonElement kind = run.GetProperty("units")[0].GetProperty("kind");
+
+        Assert.Equal(JsonValueKind.String, kind.ValueKind);
     }
 
     [Fact]
@@ -87,11 +99,18 @@ public sealed class RunEndpointsTests : ApiTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private async Task<Run> CreateRunAsync()
+    private async Task<HttpResponseMessage> PostRunAsync()
     {
         HttpResponseMessage response = await Client.PostAsync("/runs", null);
         response.EnsureSuccessStatusCode();
 
-        return (await response.Content.ReadFromJsonAsync<Run>())!;
+        return response;
+    }
+
+    private async Task<Run> CreateRunAsync()
+    {
+        HttpResponseMessage response = await PostRunAsync();
+
+        return (await response.Content.ReadFromJsonAsync<Run>(Json))!;
     }
 }
