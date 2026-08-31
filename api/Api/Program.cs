@@ -1,8 +1,11 @@
 using Api.Ghosts;
 using Api.Runs;
+using Api.Serialization;
 using Api.Storage;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options => ApiJson.Configure(options.SerializerOptions));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

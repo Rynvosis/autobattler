@@ -1,5 +1,8 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Testcontainers.DynamoDb;
 
 namespace Api.Tests;
@@ -12,6 +15,9 @@ public abstract class ApiTests : IAsyncLifetime
     private WebApplicationFactory<Program> _api = null!;
 
     protected HttpClient Client { get; private set; } = null!;
+
+    protected JsonSerializerOptions Json =>
+        Service<IOptions<JsonOptions>>().Value.SerializerOptions;
 
     public async Task InitializeAsync()
     {
