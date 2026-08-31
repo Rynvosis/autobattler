@@ -34,7 +34,7 @@ public class Scheduler(Board board, Roster roster)
 
     private void RunBattleStart()
     {
-        Emit(new StartEvent());
+        Emit(new StartEvent(), Cause.Board);
     }
 
     private void RunTick()
@@ -47,8 +47,8 @@ public class Scheduler(Board board, Roster roster)
         UnitAttackEvent playerStrike = new() { Source = playerHead, Target = ghostHead, Value = playerHead.Attack };
         UnitAttackEvent ghostStrike = new() { Source = ghostHead, Target = playerHead, Value = ghostHead.Attack };
 
-        Emit(playerStrike);
-        Emit(ghostStrike);
+        Emit(playerStrike, Cause.Attack(playerHead));
+        Emit(ghostStrike, Cause.Attack(ghostHead));
 
         _effectsNextSubtick.Add(Strike(playerStrike));
         _effectsNextSubtick.Add(Strike(ghostStrike));
@@ -62,7 +62,8 @@ public class Scheduler(Board board, Roster roster)
                 Effect = new Damage<UnitAttackEvent> { Value = Literal.Of(strike.Value) },
                 Event = strike,
                 Context = new Context(board, strike.Source),
-                Targets = [strike.Target]
+                Targets = [strike.Target],
+                Cause = Cause.Attack(strike.Source)
             };
         }
     }
@@ -77,7 +78,7 @@ public class Scheduler(Board board, Roster roster)
 
             foreach (QueuedEffect effect in _effectsThisSubtick)
             {
-                foreach (BattleEvent battleEvent in effect.Apply()) Emit(battleEvent);
+                foreach (BattleEvent battleEvent in effect.Apply()) Emit(battleEvent, effect.Cause);
             }
 
             ResolveDeaths();
@@ -100,13 +101,13 @@ public class Scheduler(Board board, Roster roster)
 
         foreach (Unit unit in dead)
         {
-            Emit(new UnitDeathEvent { Target = unit });
+            Emit(new UnitDeathEvent { Target = unit }, Cause.Board);
         }
 
         foreach (Unit unit in dead)
         {
             foreach (Unit contributor in ContributorsTo(unit))
-                Emit(new UnitKillEvent { Source = contributor, Target = unit });
+                Emit(new UnitKillEvent { Source = contributor, Target = unit }, Cause.Board);
         }
 
         foreach (Unit unit in dead)
@@ -127,9 +128,11 @@ public class Scheduler(Board board, Roster roster)
         ];
     }
 
-    private void Emit(BattleEvent battleEvent)
+    private void Emit(BattleEvent battleEvent, Cause cause)
     {
-        _stepEvents.Add(battleEvent with { Tick = _tick, Subtick = _subtick });
-        _effectsNextSubtick.AddRange(TriggerScan.Scan(board, roster, battleEvent));
+        BattleEvent emitted = battleEvent with { Tick = _tick, Subtick = _subtick, Cause = cause };
+
+        _stepEvents.Add(emitted);
+        _effectsNextSubtick.AddRange(TriggerScan.Scan(board, roster, emitted));
     }
 }

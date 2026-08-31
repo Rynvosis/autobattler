@@ -98,21 +98,29 @@ public class BattleTests
 
         BattleEvent[] expected =
         [
-            new StartEvent { Tick = 0, Subtick = 0 },
+            new StartEvent { Tick = 0, Subtick = 0, Cause = Cause.Board },
 
-            new UnitAttackEvent { Tick = 1, Subtick = 0, Source = player, Target = ghost, Value = 1 },
-            new UnitAttackEvent { Tick = 1, Subtick = 0, Source = ghost, Target = player, Value = 1 },
-            new UnitHurtEvent { Tick = 1, Subtick = 1, Source = player, Target = ghost, Value = 1 },
-            new UnitHurtEvent { Tick = 1, Subtick = 1, Source = ghost, Target = player, Value = 1 },
+            new UnitAttackEvent
+                { Tick = 1, Subtick = 0, Cause = Cause.Attack(player), Source = player, Target = ghost, Value = 1 },
+            new UnitAttackEvent
+                { Tick = 1, Subtick = 0, Cause = Cause.Attack(ghost), Source = ghost, Target = player, Value = 1 },
+            new UnitHurtEvent
+                { Tick = 1, Subtick = 1, Cause = Cause.Attack(player), Source = player, Target = ghost, Value = 1 },
+            new UnitHurtEvent
+                { Tick = 1, Subtick = 1, Cause = Cause.Attack(ghost), Source = ghost, Target = player, Value = 1 },
 
-            new UnitAttackEvent { Tick = 2, Subtick = 0, Source = player, Target = ghost, Value = 1 },
-            new UnitAttackEvent { Tick = 2, Subtick = 0, Source = ghost, Target = player, Value = 1 },
-            new UnitHurtEvent { Tick = 2, Subtick = 1, Source = player, Target = ghost, Value = 1 },
-            new UnitHurtEvent { Tick = 2, Subtick = 1, Source = ghost, Target = player, Value = 1 },
-            new UnitDeathEvent { Tick = 2, Subtick = 1, Target = player },
-            new UnitDeathEvent { Tick = 2, Subtick = 1, Target = ghost },
-            new UnitKillEvent { Tick = 2, Subtick = 1, Source = ghost, Target = player },
-            new UnitKillEvent { Tick = 2, Subtick = 1, Source = player, Target = ghost }
+            new UnitAttackEvent
+                { Tick = 2, Subtick = 0, Cause = Cause.Attack(player), Source = player, Target = ghost, Value = 1 },
+            new UnitAttackEvent
+                { Tick = 2, Subtick = 0, Cause = Cause.Attack(ghost), Source = ghost, Target = player, Value = 1 },
+            new UnitHurtEvent
+                { Tick = 2, Subtick = 1, Cause = Cause.Attack(player), Source = player, Target = ghost, Value = 1 },
+            new UnitHurtEvent
+                { Tick = 2, Subtick = 1, Cause = Cause.Attack(ghost), Source = ghost, Target = player, Value = 1 },
+            new UnitDeathEvent { Tick = 2, Subtick = 1, Cause = Cause.Board, Target = player },
+            new UnitDeathEvent { Tick = 2, Subtick = 1, Cause = Cause.Board, Target = ghost },
+            new UnitKillEvent { Tick = 2, Subtick = 1, Cause = Cause.Board, Source = ghost, Target = player },
+            new UnitKillEvent { Tick = 2, Subtick = 1, Cause = Cause.Board, Source = player, Target = ghost }
         ];
 
         Assert.Equal(expected, result.Events);

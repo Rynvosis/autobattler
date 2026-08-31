@@ -63,6 +63,28 @@ public sealed class RunEndpointsTests : ApiTests
     }
 
     [Fact]
+    public async Task FightBattle_ReturnsTheRunBothTeamsAndTypedEvents()
+    {
+        Run created = await CreateRunAsync();
+
+        HttpResponseMessage response = await Client.PostAsync($"/runs/{created.RunId}/battle", null);
+        response.EnsureSuccessStatusCode();
+
+        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        JsonElement battle = body.GetProperty("battle");
+        JsonElement events = battle.GetProperty("events");
+
+        Assert.Equal(created.RunId, body.GetProperty("run").GetProperty("runId").GetString());
+        Assert.Equal(JsonValueKind.String, battle.GetProperty("outcome").ValueKind);
+        Assert.NotEmpty(battle.GetProperty("player").EnumerateArray());
+        Assert.NotEmpty(battle.GetProperty("opponent").EnumerateArray());
+        Assert.Equal("start", events[0].GetProperty("type").GetString());
+
+        Assert.All(events.EnumerateArray(), battleEvent =>
+            Assert.Equal(JsonValueKind.String, battleEvent.GetProperty("cause").GetProperty("kind").ValueKind));
+    }
+
+    [Fact]
     public async Task FightBattle_StoresTheRunsTeamAsAGhost()
     {
         Run created = await CreateRunAsync();
