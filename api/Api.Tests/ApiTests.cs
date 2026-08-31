@@ -1,46 +1,47 @@
 using System.Text.Json;
+using Amazon.DynamoDBv2;
+using Api.Storage;
 using Microsoft.AspNetCore.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Testcontainers.DynamoDb;
 
 namespace Api.Tests;
 
 // The app creates its own tables against the container, so a test exercises the wiring it ships.
-public abstract class ApiTests : IAsyncLifetime
+public abstract class ApiTests(ApiFixture fixture) : IClassFixture<ApiFixture>, IAsyncLifetime
 {
-    private readonly DynamoDbContainer _container = new DynamoDbBuilder("amazon/dynamodb-local:latest").Build();
-
-    private WebApplicationFactory<Program> _api = null!;
-
     protected HttpClient Client { get; private set; } = null!;
 
-    protected JsonSerializerOptions Json =>
-        Service<IOptions<JsonOptions>>().Value.SerializerOptions;
+    protected JsonSerializerOptions Json => Service<IOptions<JsonOptions>>().Value.SerializerOptions;
 
     public async Task InitializeAsync()
     {
-        await _container.StartAsync();
+        await ResetTablesAsync();
 
-        _api = new WebApplicationFactory<Program>().WithWebHostBuilder(host =>
-        {
-            host.UseSetting("AWS:Region", "eu-west-2");
-            host.UseSetting("DynamoDB:ServiceUrl", _container.GetConnectionString());
-        });
-
-        Client = _api.CreateClient();
+        Client = fixture.Api.CreateClient();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         Client.Dispose();
-        await _api.DisposeAsync();
-        await _container.DisposeAsync();
+
+        return Task.CompletedTask;
     }
 
     protected T Service<T>() where T : notnull
     {
-        return _api.Services.GetRequiredService<T>();
+        return fixture.Api.Services.GetRequiredService<T>();
+    }
+
+    // The container is shared by every test in the class, so each one starts from empty tables.
+    private async Task ResetTablesAsync()
+    {
+        IAmazonDynamoDB dynamoDB = Service<IAmazonDynamoDB>();
+
+        foreach (TableDefinition table in fixture.Api.Services.GetServices<TableDefinition>())
+        {
+            await dynamoDB.DeleteTableAsync(table.CreateTableRequest.TableName);
+            await TableProvisioner.EnsureCreatedAsync(dynamoDB, table, CancellationToken.None);
+        }
     }
 }

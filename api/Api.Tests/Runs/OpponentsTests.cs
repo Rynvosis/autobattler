@@ -6,7 +6,7 @@ using Api.Teams;
 
 namespace Api.Tests.Runs;
 
-public sealed class OpponentsTests : ApiTests
+public sealed class OpponentsTests(ApiFixture fixture) : ApiTests(fixture)
 {
     private const int MinimumCandidates = 5;
 
