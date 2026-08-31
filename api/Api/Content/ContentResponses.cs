@@ -1,6 +1,6 @@
 namespace Api.Content;
 
-// The ability tree is engine types with no wire shape, so the manifest is projected rather than returned.
+// Ability is an engine tree with no wire shape; Description stands in for it.
 public static class ContentResponses
 {
     public static ContentResponse From(ContentManifest manifest)

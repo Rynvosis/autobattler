@@ -14,6 +14,7 @@ public static class RunEndpoints
     public static void MapRuns(this WebApplication app)
     {
         app.MapPost("/runs", CreateRun);
+        app.MapGet("/runs/{runId}", GetRun);
         app.MapPost("/runs/{runId}/battle", FightBattle);
     }
 
@@ -24,6 +25,15 @@ public static class RunEndpoints
         await runs.PutAsync(run, cancellationToken);
 
         return Results.Created($"/runs/{run.RunId}", run);
+    }
+
+    private static async Task<IResult> GetRun(string runId, RunStore runs, CancellationToken cancellationToken)
+    {
+        Run? run = await runs.GetAsync(runId, cancellationToken);
+
+        if (run is null) return Results.NotFound();
+
+        return Results.Ok(run);
     }
 
     private static async Task<IResult> FightBattle(

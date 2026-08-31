@@ -1,3 +1,4 @@
+using Api.Content;
 using Api.Ghosts;
 using Api.Runs;
 using Api.Serialization;
@@ -25,6 +26,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.MapContent();
 app.MapRuns();
 
 app.Run();
