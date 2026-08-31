@@ -6,7 +6,7 @@ using Api.Runs;
 
 namespace Api.Tests.Runs;
 
-public sealed class RunEndpointsTests : ApiTests
+public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
 {
     private RunStore Runs => Service<RunStore>();
 

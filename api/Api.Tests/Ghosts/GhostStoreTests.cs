@@ -4,7 +4,7 @@ using Api.Teams;
 
 namespace Api.Tests.Ghosts;
 
-public sealed class GhostStoreTests : ApiTests
+public sealed class GhostStoreTests(ApiFixture fixture) : ApiTests(fixture)
 {
     private static readonly DateTimeOffset ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(1787769654);
 

@@ -4,7 +4,7 @@ using Api.Teams;
 
 namespace Api.Tests.Runs;
 
-public sealed class RunStoreTests : ApiTests
+public sealed class RunStoreTests(ApiFixture fixture) : ApiTests(fixture)
 {
     private RunStore Runs => Service<RunStore>();
 
