@@ -6,7 +6,7 @@ namespace Api.Runs;
 public sealed record Run
 {
     public required string RunId { get; init; }
-    public required int Version { get; init; }
+    public int Version { get; init; }
     public required int Victories { get; init; }
     public required int Gold { get; init; }
     public required int Stage { get; init; }
@@ -19,7 +19,6 @@ public sealed record Run
     {
         return this with
         {
-            Version = Version + 1,
             Victories = outcome == BattleOutcome.Win ? Victories + 1 : Victories,
             Gold = Gold + Economy.GoldFor(outcome),
             Stage = Stage + 1

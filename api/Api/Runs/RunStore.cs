@@ -22,14 +22,49 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
         return response.IsItemSet ? FromItem(response.Item) : null;
     }
 
-    // TODO: condition the write on the stored version.
-    public Task PutAsync(Run run, CancellationToken cancellationToken)
+    public async Task<Run> CreateAsync(Run run, CancellationToken cancellationToken)
     {
-        return dynamoDB.PutItemAsync(new PutItemRequest
+        Run created = run with { Version = 1 };
+
+        await dynamoDB.PutItemAsync(new PutItemRequest
         {
             TableName = RunTable.TableName,
-            Item = ToItem(run)
+            Item = ToItem(created),
+            ConditionExpression = $"attribute_not_exists({RunTable.RunId})"
         }, cancellationToken);
+
+        return created;
+    }
+
+    public async Task<Run> UpdateAsync(Run run, CancellationToken cancellationToken)
+    {
+        Run updated = run with { Version = run.Version + 1 };
+
+        try
+        {
+            await dynamoDB.PutItemAsync(new PutItemRequest
+            {
+                TableName = RunTable.TableName,
+                Item = ToItem(updated),
+                ConditionExpression = "#version = :expectedVersion",
+                // VERSION is a DynamoDB reserved word, hence the alias.
+                ExpressionAttributeNames = new Dictionary<string, string>
+                {
+                    ["#version"] = RunTable.Version
+                },
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                {
+                    [":expectedVersion"] = AttributeValues.Number(run.Version)
+                },
+                ReturnValuesOnConditionCheckFailure = ReturnValuesOnConditionCheckFailure.ALL_OLD
+            }, cancellationToken);
+        }
+        catch (ConditionalCheckFailedException conflict)
+        {
+            throw new RunConflictException(FromItem(conflict.Item));
+        }
+
+        return updated;
     }
 
     private static Dictionary<string, AttributeValue> ToItem(Run run)
