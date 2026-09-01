@@ -5,14 +5,12 @@ namespace Api.Runs;
 
 public static class FillerUnits
 {
-    private static readonly UnitDefinition[] Pool = [.. Monsters.Manifest.Units];
-
     public static IReadOnlyList<TeamUnit> For(int stage)
     {
         int budget = BudgetFor(stage);
         int count = Math.Min(Economy.TeamSize, budget / Economy.UnitCost);
 
-        List<TeamUnit> units = [.. Random.Shared.GetItems(Pool, count).Select(TeamUnits.From)];
+        List<TeamUnit> units = [.. Random.Shared.GetItems(Monsters.Pool, count).Select(TeamUnits.From)];
 
         int upgrades = (budget - count * Economy.UnitCost) / Economy.UpgradeCost;
 

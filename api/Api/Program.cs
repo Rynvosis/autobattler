@@ -1,6 +1,7 @@
 using Api.Content;
 using Api.Ghosts;
 using Api.Runs;
+using Api.Runs.Shop;
 using Api.Serialization;
 using Api.Storage;
 
@@ -26,8 +27,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseExceptionHandler();
+
 app.MapContent();
 app.MapRuns();
+app.MapMoves();
 
 app.Run();
 

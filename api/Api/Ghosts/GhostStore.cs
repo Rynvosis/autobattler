@@ -49,7 +49,7 @@ public sealed class GhostStore(IAmazonDynamoDB dynamoDB)
             [GhostTable.Stage] = AttributeValues.Number(ghost.Stage),
             [GhostTable.RunId] = new AttributeValue { S = ghost.RunId },
             [GhostTable.ExpiresAt] = AttributeValues.Number(ghost.ExpiresAt.ToUnixTimeSeconds()),
-            [GhostTable.Units] = TeamUnits.ToItem(ghost.Units)
+            [GhostTable.Units] = TeamUnits.ToItems(ghost.Units)
         };
     }
 
@@ -60,7 +60,7 @@ public sealed class GhostStore(IAmazonDynamoDB dynamoDB)
             Stage = AttributeValues.ToInt32(item[GhostTable.Stage]),
             RunId = item[GhostTable.RunId].S,
             ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(AttributeValues.ToInt64(item[GhostTable.ExpiresAt])),
-            Units = TeamUnits.FromItem(item[GhostTable.Units])
+            Units = TeamUnits.FromItems(item[GhostTable.Units])
         };
     }
 }

@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Api.Runs.Shop;
 using Api.Storage;
 using Api.Teams;
 
@@ -77,7 +78,10 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
             [RunTable.Gold] = AttributeValues.Number(run.Gold),
             [RunTable.Stage] = AttributeValues.Number(run.Stage),
             [RunTable.ExpiresAt] = AttributeValues.Number(run.ExpiresAt.ToUnixTimeSeconds()),
-            [RunTable.Units] = TeamUnits.ToItem(run.Units)
+            [RunTable.Units] = TeamUnits.ToItems(run.Units),
+            [RunTable.Shop] = ShopOffers.ToItems(run.Shop),
+            [RunTable.Duplicated] = new() { BOOL = run.Duplicated },
+            [RunTable.UpgradeCredits] = AttributeValues.Number(run.UpgradeCredits)
         };
     }
 
@@ -91,7 +95,10 @@ public sealed class RunStore(IAmazonDynamoDB dynamoDB)
             Gold = AttributeValues.ToInt32(item[RunTable.Gold]),
             Stage = AttributeValues.ToInt32(item[RunTable.Stage]),
             ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(AttributeValues.ToInt64(item[RunTable.ExpiresAt])),
-            Units = TeamUnits.FromItem(item[RunTable.Units])
+            Units = TeamUnits.FromItems(item[RunTable.Units]),
+            Shop = ShopOffers.FromItems(item[RunTable.Shop]),
+            Duplicated = item[RunTable.Duplicated].BOOL ?? false,
+            UpgradeCredits = AttributeValues.ToInt32(item[RunTable.UpgradeCredits])
         };
     }
 }

@@ -6,7 +6,7 @@ using Api.Runs;
 
 namespace Api.Tests.Runs;
 
-public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
+public sealed class RunEndpointsTests(ApiFixture fixture) : RunApiTests(fixture)
 {
     private RunStore Runs => Service<RunStore>();
 
@@ -20,17 +20,18 @@ public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
         Assert.Equal(1, run.Stage);
         Assert.Equal(0, run.Victories);
         Assert.Equal(Economy.StartingGold, run.Gold);
-        Assert.NotEmpty(run.Units);
+        Assert.Empty(run.Units);
+        Assert.Equal(Economy.ShopSize, run.Shop.Count);
         Assert.False(run.Finished);
     }
 
     [Fact]
     public async Task CreateRun_WritesAUnitKindAsAString()
     {
-        HttpResponseMessage response = await PostRunAsync();
+        HttpResponseMessage response = await PostNewRunAsync();
 
         JsonElement run = await response.Content.ReadFromJsonAsync<JsonElement>();
-        JsonElement kind = run.GetProperty("units")[0].GetProperty("kind");
+        JsonElement kind = run.GetProperty("shop")[0].GetProperty("kind");
 
         Assert.Equal(JsonValueKind.String, kind.ValueKind);
     }
@@ -49,9 +50,9 @@ public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
     [Fact]
     public async Task FightBattle_AdvancesTheStageAndPaysGold()
     {
-        Run created = await CreateRunAsync();
+        Run created = await CreateArmedRunAsync();
 
-        HttpResponseMessage response = await Client.PostAsync($"/runs/{created.RunId}/battle", null);
+        HttpResponseMessage response = await BattleAsync(created);
         response.EnsureSuccessStatusCode();
 
         Run? after = await Runs.GetAsync(created.RunId, CancellationToken.None);
@@ -65,9 +66,9 @@ public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
     [Fact]
     public async Task FightBattle_ReturnsTheRunBothTeamsAndTypedEvents()
     {
-        Run created = await CreateRunAsync();
+        Run created = await CreateArmedRunAsync();
 
-        HttpResponseMessage response = await Client.PostAsync($"/runs/{created.RunId}/battle", null);
+        HttpResponseMessage response = await BattleAsync(created);
         response.EnsureSuccessStatusCode();
 
         JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -87,9 +88,9 @@ public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
     [Fact]
     public async Task FightBattle_StoresTheRunsTeamAsAGhost()
     {
-        Run created = await CreateRunAsync();
+        Run created = await CreateArmedRunAsync();
 
-        await Client.PostAsync($"/runs/{created.RunId}/battle", null);
+        await BattleAsync(created);
 
         IReadOnlyList<Ghost> stage = await Ghosts.FindOpponentsAsync(1, "nobody", CancellationToken.None);
 
@@ -100,15 +101,18 @@ public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
     [Fact]
     public async Task FightBattle_WhenEveryStageIsFought_RejectsTheNextBattle()
     {
-        Run created = await CreateRunAsync();
+        Run run = await CreateArmedRunAsync();
 
         for (int stage = 0; stage < Economy.TotalStages; stage++)
         {
-            HttpResponseMessage fought = await Client.PostAsync($"/runs/{created.RunId}/battle", null);
+            HttpResponseMessage fought = await BattleAsync(run);
             fought.EnsureSuccessStatusCode();
+
+            JsonElement body = await fought.Content.ReadFromJsonAsync<JsonElement>();
+            run = body.GetProperty("run").Deserialize<Run>(Json)!;
         }
 
-        HttpResponseMessage response = await Client.PostAsync($"/runs/{created.RunId}/battle", null);
+        HttpResponseMessage response = await BattleAsync(run);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -116,23 +120,19 @@ public sealed class RunEndpointsTests(ApiFixture fixture) : ApiTests(fixture)
     [Fact]
     public async Task FightBattle_WhenTheRunIsUnknown_ReturnsNotFound()
     {
-        HttpResponseMessage response = await Client.PostAsync("/runs/missing/battle", null);
+        HttpResponseMessage response =
+            await Client.PostAsJsonAsync("/runs/missing/battle", new { version = 1 }, Json);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private async Task<HttpResponseMessage> PostRunAsync()
+    private Task<HttpResponseMessage> BattleAsync(Run run)
     {
-        HttpResponseMessage response = await Client.PostAsync("/runs", null);
-        response.EnsureSuccessStatusCode();
-
-        return response;
+        return PostAsync(run, "battle", new { version = run.Version });
     }
 
-    private async Task<Run> CreateRunAsync()
+    private async Task<Run> CreateArmedRunAsync()
     {
-        HttpResponseMessage response = await PostRunAsync();
-
-        return (await response.Content.ReadFromJsonAsync<Run>(Json))!;
+        return await BuyAsync(await CreateRunAsync(), 0);
     }
 }

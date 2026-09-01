@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Api.Combat.Units;
 using Api.Runs;
 using Api.Teams;
@@ -16,9 +17,9 @@ public sealed class RunStoreTests(ApiFixture fixture) : ApiTests(fixture)
         Run? loaded = await Runs.GetAsync(saved.RunId, CancellationToken.None);
 
         Assert.NotNull(loaded);
-        TeamUnit[] noUnits = [];
-        Assert.Equal(saved.Units, loaded.Units);
-        Assert.Equal(saved with { Units = noUnits }, loaded with { Units = noUnits });
+
+        // Run's record equality compares list references, so the values are compared serialised.
+        Assert.Equal(JsonSerializer.Serialize(saved, Json), JsonSerializer.Serialize(loaded, Json));
     }
 
     [Fact]
@@ -66,6 +67,12 @@ public sealed class RunStoreTests(ApiFixture fixture) : ApiTests(fixture)
             [
                 new TeamUnit { Kind = new Kind("goblin"), Attack = 3, Health = 5 },
                 new TeamUnit { Kind = new Kind("goblin"), Attack = 7, Health = 2 }
+            ],
+            Shop =
+            [
+                new TeamUnit { Kind = new Kind("wyrm"), Attack = 2, Health = 6 },
+                null,
+                new TeamUnit { Kind = new Kind("ghoul"), Attack = 2, Health = 5 }
             ]
         };
     }

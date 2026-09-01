@@ -3,6 +3,7 @@ using Api.Combat.Battlefield;
 using Api.Combat.Battles;
 using Api.Content;
 using Api.Ghosts;
+using Api.Runs.Shop;
 using Api.Teams;
 
 namespace Api.Runs;
@@ -36,6 +37,7 @@ public static class RunEndpoints
 
     private static async Task<IResult> FightBattle(
         string runId,
+        MutationRequest body,
         RunStore runs,
         GhostStore ghosts,
         CancellationToken cancellationToken)
@@ -47,7 +49,14 @@ public static class RunEndpoints
             return Results.NotFound();
         }
 
-        if (run.Finished) return Results.BadRequest();
+        if (run.Version != body.Version)
+        {
+            return Results.Json(run, statusCode: StatusCodes.Status409Conflict);
+        }
+
+        if (run.Finished) return Results.BadRequest(new { error = MoveError.RunFinished });
+
+        if (run.Units.Count == 0) return Results.BadRequest(new { error = MoveError.EmptyTeam });
 
         Team player = TeamUnits.ToTeam(run.Units, 0);
         Team opponent = await Opponents.FindOrCreateTeamAsync(ghosts, run, cancellationToken);
@@ -68,26 +77,21 @@ public static class RunEndpoints
             Units = run.Units
         }, cancellationToken);
 
-        try
-        {
-            Run updated = await runs.UpdateAsync(run.AfterBattle(result.Outcome), cancellationToken);
+        Run updated = await runs.UpdateAsync(
+            run.AfterBattle(result.Outcome, ShopOffers.Roll()),
+            cancellationToken);
 
-            return Results.Ok(new BattleResponse
-            {
-                Run = updated,
-                Battle = new BattleRecord
-                {
-                    Outcome = result.Outcome,
-                    Player = playerUnits,
-                    Opponent = opponentUnits,
-                    Events = EventRecords.From(result.Events)
-                }
-            });
-        }
-        catch (RunConflictException conflict)
+        return Results.Ok(new BattleResponse
         {
-            return Results.Json(conflict.Stored, statusCode: StatusCodes.Status409Conflict);
-        }
+            Run = updated,
+            Battle = new BattleRecord
+            {
+                Outcome = result.Outcome,
+                Player = playerUnits,
+                Opponent = opponentUnits,
+                Events = EventRecords.From(result.Events)
+            }
+        });
     }
 
     private static Run StartRun(string runId)
@@ -99,17 +103,8 @@ public static class RunEndpoints
             Gold = Economy.StartingGold,
             Stage = 1,
             ExpiresAt = DateTimeOffset.UtcNow.AddHours(RunLifetimeHours),
-            Units = StartingTeam()
+            Units = [],
+            Shop = ShopOffers.Roll()
         };
-    }
-
-    // TODO: the shop fills a team. Until it exists, a run starts with a fixed one.
-    private static IReadOnlyList<TeamUnit> StartingTeam()
-    {
-        return
-        [
-            TeamUnits.From(Monsters.Golem),
-            TeamUnits.From(Monsters.Goblin)
-        ];
     }
 }
