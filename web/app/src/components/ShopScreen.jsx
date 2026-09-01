@@ -10,7 +10,7 @@ const TEAM_SIZE = 5;
 
 const PADS = [
   { id: "upgrade", label: "Upgrade", icon: "⬆️", tip: "Drop a unit here for +1/+1. Spends a credit if you hold one, otherwise 2 gold." },
-  { id: "duplicate", label: "Duplicate", icon: "🧬", tip: "Drop a unit here to append a copy at its base stats. Once per stage." },
+  { id: "duplicate", label: "Duplicate", icon: "🧬", tip: "Drop a unit here to append a copy, upgrades and all. Once per stage." },
   { id: "sell", label: "Sell", icon: "🗑️", tip: "Drop a unit here to bank one upgrade credit." },
 ];
 

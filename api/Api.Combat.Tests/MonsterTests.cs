@@ -57,13 +57,13 @@ public class MonsterTests
 
         BattleResult result = Battle.Resolve(new Team([golem, devourer]), new Team([enemy]), Monsters.Roster);
 
-        Assert.Equal(8, devourer.Attack);
+        Assert.Equal(7, devourer.Attack);
         Assert.True(golem.Dead);
         Assert.Contains(result.Events.OfType<UnitKillEvent>(), kill => ReferenceEquals(kill.Target, golem));
     }
 
     [Fact]
-    public void Ghoul_WhenAnEnemyDies_GainsTwoOfEachStat()
+    public void Ghoul_WhenAnEnemyDies_GainsTwoAttackAndOneHealth()
     {
         Unit ghoul = Monster(0, Monsters.Ghoul);
         Unit enemy = Dummy(1, 0, 1);
@@ -72,7 +72,36 @@ public class MonsterTests
 
         Assert.Equal(BattleOutcome.Win, result.Outcome);
         Assert.Equal(4, ghoul.Attack);
-        Assert.Equal(7, ghoul.Health);
+        Assert.Equal(6, ghoul.Health);
+    }
+
+    [Fact]
+    public void Ghoul_WhenAnAllyDies_GainsTwoAttackAndOneHealth()
+    {
+        // The Devourer eats the food at the start, which is the only death in the battle: the
+        // enemy has too much health to fall inside the tick cap, and deals nothing back.
+        Unit food = Dummy(0, 0, 1);
+        Unit devourer = Monster(1, Monsters.Devourer);
+        Unit ghoul = Monster(2, Monsters.Ghoul);
+        Unit enemy = Dummy(3, 0, 999);
+
+        Battle.Resolve(new Team([food, devourer, ghoul]), new Team([enemy]), Monsters.Roster);
+
+        Assert.True(food.Dead);
+        Assert.Equal(4, ghoul.Attack);
+        Assert.Equal(6, ghoul.Health);
+    }
+
+    [Fact]
+    public void Ghoul_WhenItDies_DoesNotTriggerOnItself()
+    {
+        Unit ghoul = Monster(0, Monsters.Ghoul);
+        Unit killer = Dummy(1, 5, 999);
+
+        Battle.Resolve(new Team([ghoul]), new Team([killer]), Monsters.Roster);
+
+        Assert.True(ghoul.Dead);
+        Assert.Equal(2, ghoul.Attack);
     }
 
     [Fact]
@@ -112,19 +141,19 @@ public class MonsterTests
     }
 
     [Fact]
-    public void Vampire_WhenItAttacks_GainsOneHealth()
+    public void Vampire_WhenItAttacks_GainsThreeHealth()
     {
         Unit vampire = Monster(0, Monsters.Vampire);
         Unit enemy = Dummy(1, 0, 1);
 
         Battle.Resolve(new Team([vampire]), new Team([enemy]), Monsters.Roster);
 
-        Assert.Equal(8, vampire.Health);
+        Assert.Equal(10, vampire.Health);
         Assert.Equal(3, vampire.Attack);
     }
 
     [Fact]
-    public void Goblin_OnStart_GivesEveryGoblinIncludingItselfTwoOfEachStat()
+    public void Goblin_OnStart_GivesEveryOtherGoblinTwoOfEachStat()
     {
         Unit first = Monster(0, Monsters.Goblin);
         Unit second = Monster(1, Monsters.Goblin);
@@ -150,6 +179,6 @@ public class MonsterTests
         Battle.Resolve(new Team([wraithblade, golem]), new Team([killer]), Monsters.Roster);
 
         Assert.True(wraithblade.Dead);
-        Assert.Equal(10, golem.Attack);
+        Assert.Equal(9, golem.Attack);
     }
 }

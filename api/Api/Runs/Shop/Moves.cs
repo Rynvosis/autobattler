@@ -1,6 +1,3 @@
-using Api.Content;
-using Api.Teams;
-
 namespace Api.Runs.Shop;
 
 public static class Moves
@@ -42,12 +39,12 @@ public static class Moves
 
         if (run.Units.Count >= Economy.TeamSize) return MoveOutcome.Refused(MoveError.TeamFull);
 
-        UnitDefinition definition = Monsters.Manifest.Units.First(candidate => candidate.Kind == unit.Kind);
-
+        // The copy carries the upgrades the original has paid for. Sharing the reference is
+        // safe: a TeamUnit is immutable, and Upgrade replaces a slot rather than mutating it.
         return MoveOutcome.Accepted(run with
         {
             Gold = run.Gold - Economy.DuplicateCost,
-            Units = [.. run.Units, TeamUnits.From(definition)],
+            Units = [.. run.Units, unit],
             Duplicated = true
         });
     }
