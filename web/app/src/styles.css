@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #14121f;
+  --color-panel: #241f35;
+  --color-slate: #322b48;
+  --color-parchment: #f5ecd9;
+  --color-gold: #ffc93c;
+  --color-blood: #e5484d;
+  --color-moss: #6fcf5f;
+  --font-pixel: "Minecraft", ui-monospace, monospace;
+}
+
+body {
+  margin: 0;
+  background: var(--color-void);
+  color: var(--color-parchment);
+  font-family: var(--font-pixel);
+  /* A pellet in flight is fixed and transformed, which can widen the scroll area. */
+  overflow-x: clip;
+}
+
+/* RetroUI's own button paints its background colour as a halo outside its frame
+   (box-shadow: -2px -2px 0 2px <bg>), which bleeds past the border on a bright fill. This
+   matches the hard border and offset shadow every other surface here already uses. */
+.pixel-btn {
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-pixel);
+  transition: transform 60ms steps(2), box-shadow 60ms steps(2), filter 120ms;
+}
+.pixel-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.pixel-btn:active:not(:disabled) { transform: translate(4px, 4px); box-shadow: 0 0 0 #000; }
+.pixel-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Emoji are the unit art, so they must not be selected or dragged as images. */
+.unit-art {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* The blow in flight, thrown on the attack and landing on the hurt. */
+.pellet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 3px solid #000;
+  pointer-events: none;
+  image-rendering: pixelated;
+  z-index: 60;
+}
+.pellet-damage { background: #fff; }
+.pellet-buff { background: var(--color-gold); }
+
+/* Two columns per unit, attack left and health right, each stacking its own deltas upward.
+   Newest sits nearest the unit and pushes the older ones up. */
+.float-col {
+  position: absolute;
+  bottom: 42%;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 40;
+}
+.float-col-attack { left: -6px; align-items: flex-start; }
+.float-col-health { right: -6px; align-items: flex-end; }
+
+.float-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 40;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+/* Colour names the stat: orange is attack, matching its chip; green a heal, red a wound. */
+.float-attack { color: #ff9f43; }
+.float-heal { color: var(--color-moss); }
+.float-damage { color: var(--color-blood); }
+
+.tooltip-retro {
+  background: var(--color-panel) !important;
+  color: var(--color-parchment) !important;
+  border: 3px solid #000 !important;
+  box-shadow: 4px 4px 0 #000 !important;
+  border-radius: 0 !important;
+  font-family: var(--font-pixel) !important;
+  max-width: 18rem;
+  opacity: 1 !important;
+  z-index: 70 !important;
+}
