@@ -6,6 +6,10 @@ namespace Api.Combat.Effects;
 public abstract record Effect<TEvent> where TEvent : BattleEvent
 {
     public abstract IReadOnlyList<BattleEvent> Apply(Context context, TEvent battleEvent, Unit recipient);
+
+    // Asked twice: once when a scope picks its targets, and again at apply time, so a unit
+    // that dies in between is dropped.
+    public virtual bool Reaches(Unit unit) => !unit.Dead;
 }
 
 public sealed record Damage<TEvent> : Effect<TEvent> where TEvent : BattleEvent
@@ -19,6 +23,21 @@ public sealed record Damage<TEvent> : Effect<TEvent> where TEvent : BattleEvent
         recipient.Health -= value;
 
         return value > 0 ? [new UnitHurtEvent { Source = context.Owner, Target = recipient, Value = value }] : [];
+    }
+}
+
+public sealed record Bounty<TEvent> : Effect<TEvent> where TEvent : BattleEvent
+{
+    public required IValue<TEvent> Value { get; init; }
+
+    // A corpse can still pay out: this is what an on-death bounty is.
+    public override bool Reaches(Unit unit) => true;
+
+    public override IReadOnlyList<BattleEvent> Apply(Context context, TEvent battleEvent, Unit recipient)
+    {
+        int value = Value.Resolve(context, battleEvent, recipient);
+
+        return value > 0 ? [new UnitBountyEvent { Target = recipient, Value = value }] : [];
     }
 }
 

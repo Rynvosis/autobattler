@@ -68,7 +68,7 @@ function TopBar({ game }) {
           <Pip tip="Stage">🏁 {Math.min(run.stage, TOTAL_STAGES)}/{TOTAL_STAGES}</Pip>
           <Pip tip="Victories">🏆 {run.victories}</Pip>
           <Pip tip="Upgrade credits, banked by selling">✨ {run.upgradeCredits}</Pip>
-          <Pip tip="Gold" gold>🪙 {run.gold}</Pip>
+          <Pip tip="Gold" gold>🪙 {run.gold + game.bounty}</Pip>
         </div>
       )}
       {run && (
@@ -81,11 +81,13 @@ function TopBar({ game }) {
 function Pip({ children, tip, gold }) {
   return (
     <span
+      // The replay throws its coins at this, so it needs a name and a positioning context.
+      id={gold ? "gold-pip" : undefined}
+      style={{ boxShadow: "3px 3px 0 #000", position: gold ? "relative" : undefined }}
       data-tooltip-id="unit-tip"
       data-tooltip-content={tip}
       className={`px-3 py-1 text-sm tabular-nums border-4 border-black
         ${gold ? "bg-gold text-void" : "bg-slate text-parchment"}`}
-      style={{ boxShadow: "3px 3px 0 #000" }}
     >
       {children}
     </span>

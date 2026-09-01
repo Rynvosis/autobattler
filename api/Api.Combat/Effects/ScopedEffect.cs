@@ -11,7 +11,8 @@ public sealed record ScopedEffect<TEvent> where TEvent : BattleEvent
 
     public IReadOnlyList<Unit> Targets(Context context, TEvent battleEvent)
     {
-        HashSet<Unit> selected = [.. Scopes.SelectMany(scope => scope.Of(context, battleEvent))];
+        HashSet<Unit> selected =
+            [.. Scopes.SelectMany(scope => scope.Of(context, battleEvent, Effect.Reaches))];
 
         return [.. context.UnitsInIterationOrder().Where(selected.Contains)];
     }

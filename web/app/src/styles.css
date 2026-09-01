@@ -55,6 +55,7 @@ body {
 }
 .pellet-damage { background: #fff; }
 .pellet-buff { background: var(--color-gold); }
+.pellet-coin { background: var(--color-gold); border-radius: 50%; }
 
 /* Two columns per unit, attack left and health right, each stacking its own deltas upward.
    Newest sits nearest the unit and pushes the older ones up. */

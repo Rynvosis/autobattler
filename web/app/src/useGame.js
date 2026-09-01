@@ -30,6 +30,7 @@ export function useGame() {
   const [screen, setScreen] = useState("start");
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(null);
+  const [bounty, setBounty] = useState(0);
   const [hasSavedRun, setHasSavedRun] = useState(() => Boolean(localStorage.getItem(RUN_KEY)));
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function useGame() {
     setHasSavedRun(false);
     setRun(null);
     setPending(null);
+    setBounty(0);
     setError(reason ?? null);
     setScreen("start");
   }, []);
@@ -148,6 +150,7 @@ export function useGame() {
         record: result.battle,
         run: result.run,
         goldEarned: result.run.gold - run.gold,
+        bountyEarned: result.bountyEarned,
       });
       setScreen("battle");
     } catch (failure) {
@@ -164,7 +167,14 @@ export function useGame() {
     return mutate((id, version) => api.reorder(id, version, order));
   }, [run, mutate]);
 
-  const settle = useCallback(() => keep(pending.run), [keep, pending]);
+  // Coins land during the replay, so the purse rises as they arrive. The server's run already
+  // counts every one of them — carrying the tally over would pay twice.
+  const collectBounty = useCallback((value) => setBounty((held) => held + value), []);
+
+  const settle = useCallback(() => {
+    setBounty(0);
+    keep(pending.run);
+  }, [keep, pending]);
 
   const advance = useCallback(() => {
     if (pending.run.finished) return abandonRun(null);
@@ -173,8 +183,8 @@ export function useGame() {
   }, [pending, abandonRun]);
 
   return {
-    run, screen, error, pending, definition, hasSavedRun,
-    start, resume, fight, settle, advance, abandonRun,
+    run, screen, error, pending, definition, hasSavedRun, bounty,
+    start, resume, fight, settle, advance, abandonRun, collectBounty,
     buyInto, reorder,
     sell: (teamSlot) => mutate((id, version) => api.sell(id, version, teamSlot)),
     upgrade: (teamSlot) => mutate((id, version) => api.upgrade(id, version, teamSlot)),

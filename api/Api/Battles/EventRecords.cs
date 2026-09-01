@@ -30,6 +30,11 @@ public static class EventRecords
         {
             StartEvent => new StartRecord(),
             UnitDeathEvent death => new UnitDeathRecord { Target = death.Target.Id },
+            UnitBountyEvent bounty => new UnitBountyRecord
+            {
+                Target = bounty.Target.Id,
+                Value = bounty.Value
+            },
             UnitKillEvent kill => new UnitKillRecord { Source = kill.Source.Id, Target = kill.Target.Id },
             UnitAttackEvent attack => new UnitAttackRecord
             {

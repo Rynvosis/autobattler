@@ -11,9 +11,9 @@ public static class Boards
             new Team([Unit(0), Unit(2), Unit(4)]),
             new Team([Unit(1), Unit(3), Unit(5)]));
 
-    public static Unit Unit(int id, string kind = "dummy")
+    public static Unit Unit(int id, string kind = "dummy", int attack = 1, int health = 1)
     {
-        return new Unit { Id = id, Kind = new Kind(kind), Attack = 1, Health = 1 };
+        return new Unit { Id = id, Kind = new Kind(kind), Attack = attack, Health = health };
     }
 
     public static Unit Find(Board board, int id) =>

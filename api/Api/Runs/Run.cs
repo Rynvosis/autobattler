@@ -23,12 +23,12 @@ public sealed record Run
 
     public bool Finished => Stage > Economy.TotalStages;
 
-    public Run AfterBattle(BattleOutcome outcome, IReadOnlyList<TeamUnit?> shop)
+    public Run AfterBattle(BattleOutcome outcome, IReadOnlyList<TeamUnit?> shop, int bounty)
     {
         return this with
         {
             Victories = outcome == BattleOutcome.Win ? Victories + 1 : Victories,
-            Gold = Gold + Economy.GoldFor(outcome),
+            Gold = Gold + Economy.GoldFor(outcome) + bounty,
             Stage = Stage + 1,
             Shop = shop,
             Duplicated = false

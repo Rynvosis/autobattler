@@ -22,7 +22,7 @@ public sealed record QueuedEffect<TEvent> : QueuedEffect where TEvent : BattleEv
         return
         [
             .. Targets
-                .Where(target => !target.Dead)
+                .Where(Effect.Reaches)
                 .SelectMany(target => Effect.Apply(Context, Event, target))
         ];
     }

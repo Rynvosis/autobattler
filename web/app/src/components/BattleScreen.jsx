@@ -22,7 +22,7 @@ export function BattleScreen({ game }) {
     }, SETTLE_MS);
   }, [game]);
 
-  const { board, clock, register } = useReplay(pending.record, onDone);
+  const { board, clock, register } = useReplay(pending.record, onDone, game.collectBounty);
 
   useEffect(() => {
     if (!arena.current) return;
@@ -110,10 +110,22 @@ function Result({ game }) {
       <h2 className={`text-2xl mb-2 ${outcome === "win" ? "text-moss" : outcome === "loss" ? "text-blood" : "text-gold"}`}>
         {TITLES[outcome] ?? outcome}
       </h2>
+      <div className="flex justify-center gap-4 text-xs mb-3 tabular-nums">
+        <span>
+          <b className="text-gold">+{pending.goldEarned - pending.bountyEarned}</b>
+          <span className="text-parchment/60"> from combat</span>
+        </span>
+        {pending.bountyEarned > 0 && (
+          <span>
+            <b className="text-gold">+{pending.bountyEarned}</b>
+            <span className="text-parchment/60"> from your monsters</span>
+          </span>
+        )}
+      </div>
       <p className="text-xs text-parchment/70 mb-4">
         {finished
-          ? `+${pending.goldEarned} gold. Run over: ${run.victories} of ${run.stage - 1} stages won.`
-          : `+${pending.goldEarned} gold. On to stage ${run.stage}.`}
+          ? `Run over: ${run.victories} of ${run.stage - 1} stages won.`
+          : `On to stage ${run.stage}.`}
       </p>
       <PixelButton tone="gold" onClick={game.advance}>
         {finished ? "New run" : "Continue"}

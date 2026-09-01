@@ -1,6 +1,7 @@
 using Api.Battles;
 using Api.Combat.Battlefield;
 using Api.Combat.Battles;
+using Api.Combat.Events;
 using Api.Content;
 using Api.Ghosts;
 using Api.Runs.Shop;
@@ -77,13 +78,24 @@ public static class RunEndpoints
             Units = run.Units
         }, cancellationToken);
 
+        // The roster is the one taken before the battle, because the scheduler removes a unit
+        // from its team as it dies — a Coinbug is gone from `player` by the time it has paid.
+        // A ghost's bounty has no purse to fall into.
+        HashSet<int> mine = [.. playerUnits.Select(unit => unit.Id)];
+
+        int bounty = result.Events
+            .OfType<UnitBountyEvent>()
+            .Where(earned => mine.Contains(earned.Target.Id))
+            .Sum(earned => earned.Value);
+
         Run updated = await runs.UpdateAsync(
-            run.AfterBattle(result.Outcome, ShopOffers.Roll()),
+            run.AfterBattle(result.Outcome, ShopOffers.Roll(), bounty),
             cancellationToken);
 
         return Results.Ok(new BattleResponse
         {
             Run = updated,
+            BountyEarned = bounty,
             Battle = new BattleRecord
             {
                 Outcome = result.Outcome,
