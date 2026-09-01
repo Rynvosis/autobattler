@@ -34,7 +34,7 @@ public sealed class ShopEndpointsTests(ApiFixture fixture) : RunApiTests(fixture
     }
 
     [Fact]
-    public async Task Duplicate_CopiesTheUnitAtItsBaseStats()
+    public async Task Duplicate_CopiesTheUnitWithTheUpgradesItHasPaidFor()
     {
         Run run = await CreateRunAsync();
         TeamUnit offer = run.Shop[0]!;
@@ -45,7 +45,7 @@ public sealed class ShopEndpointsTests(ApiFixture fixture) : RunApiTests(fixture
         run = await ReadRunAsync(PostAsync(run, "shop/duplicate", new { version = run.Version, teamSlot = 0 }));
 
         Assert.Equal(offer.Attack + 1, run.Units[0].Attack);
-        Assert.Equal(offer, run.Units[1]);
+        Assert.Equal(run.Units[0], run.Units[1]);
     }
 
     [Fact]

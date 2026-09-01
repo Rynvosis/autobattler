@@ -27,7 +27,7 @@ public static class Monsters
         Kind = new Kind("ghoul"),
         Name = "Ghoul",
         Icon = "🧟",
-        Description = "When an enemy dies: +2/+2 to self.",
+        Description = "When another unit dies: +2/+1 to self.",
         Attack = 2,
         Health = 5,
         Tier = 1,
@@ -36,7 +36,15 @@ public static class Monsters
             Trigger = new UnitTrigger<UnitDeathEvent>
             {
                 Participant = new EventTarget(),
-                Scopes = [Any<BattleEvent>.Of(new FromHead { Side = ScopeSide.Enemy })]
+
+                // Every enemy, and every ally in front of or behind it — which is every ally
+                // but itself, because Ahead and Behind both exclude their anchor.
+                Scopes =
+                [
+                    Any<BattleEvent>.Of(new FromHead { Side = ScopeSide.Enemy }),
+                    Any<BattleEvent>.Of(new Ahead<BattleEvent> { Anchor = One<BattleEvent>.Of(new Self()) }),
+                    Any<BattleEvent>.Of(new Behind<BattleEvent> { Anchor = One<BattleEvent>.Of(new Self()) })
+                ]
             },
             Effects =
             [
@@ -45,7 +53,7 @@ public static class Monsters
                     Effect = new StatChange<UnitDeathEvent>
                     {
                         Attack = Literal.Of(2),
-                        Health = Literal.Of(2)
+                        Health = Literal.Of(1)
                     },
                     Scopes = [Every<UnitDeathEvent>.Of(new Self())]
                 }
@@ -60,7 +68,7 @@ public static class Monsters
         Icon = "🐉",
         Description = "On attack: deals its attack to the enemy behind.",
         Attack = 2,
-        Health = 6,
+        Health = 5,
         Tier = 1,
         Ability = new Ability<UnitAttackEvent>
         {
@@ -99,7 +107,7 @@ public static class Monsters
         Kind = new Kind("vampire"),
         Name = "Vampire",
         Icon = "🧛",
-        Description = "On attack: +0/+1 to itself.",
+        Description = "On attack: +0/+3 to itself.",
         Attack = 3,
         Health = 7,
         Tier = 1,
@@ -117,7 +125,7 @@ public static class Monsters
                     Effect = new StatChange<UnitAttackEvent>
                     {
                         Attack = Literal.Of(0),
-                        Health = Literal.Of(1)
+                        Health = Literal.Of(3)
                     },
                     Scopes = [Every<UnitAttackEvent>.Of(new Self())]
                 }
@@ -130,9 +138,11 @@ public static class Monsters
         Kind = GoblinKind,
         Name = "Goblin",
         Icon = "👺",
-        Description = "At the start of battle: +2/+2 to every allied Goblin, self included.",
-        Attack = 1,
-        Health = 4,
+        // The stats carry the +2/+2 a Goblin used to give itself, so a band of them ends up
+        // exactly where it did when the buff included the caster.
+        Description = "At the start of battle: +2/+2 to every other allied Goblin.",
+        Attack = 3,
+        Health = 6,
         Tier = 1,
         Ability = new Ability<StartEvent>
         {
@@ -146,11 +156,19 @@ public static class Monsters
                         Attack = Literal.Of(2),
                         Health = Literal.Of(2)
                     },
+
+                    // Ahead and Behind both exclude their anchor, so together they are every
+                    // ally but this one.
                     Scopes =
                     [
                         Every<StartEvent>.Of(new OfKind<StartEvent>
                         {
-                            Relation = new FromHead { Side = ScopeSide.Ally },
+                            Relation = new Ahead<StartEvent> { Anchor = One<StartEvent>.Of(new Self()) },
+                            Kind = GoblinKind
+                        }),
+                        Every<StartEvent>.Of(new OfKind<StartEvent>
+                        {
+                            Relation = new Behind<StartEvent> { Anchor = One<StartEvent>.Of(new Self()) },
                             Kind = GoblinKind
                         })
                     ]
@@ -165,8 +183,8 @@ public static class Monsters
         Name = "Devourer",
         Icon = "👹",
         Description = "At the start of battle: eats the ally in front, taking its attack and health.",
-        Attack = 3,
-        Health = 5,
+        Attack = 2,
+        Health = 4,
         Tier = 1,
         Ability = DevourerAbility()
     };
@@ -177,8 +195,8 @@ public static class Monsters
         Name = "Wraithblade",
         Icon = "⚔️",
         Description = "On death: gives its attack to the ally behind.",
-        Attack = 5,
-        Health = 3,
+        Attack = 4,
+        Health = 1,
         Tier = 1,
         Ability = new Ability<UnitDeathEvent>
         {
@@ -271,7 +289,7 @@ public static class Monsters
 
     public static readonly ContentManifest Manifest = new()
     {
-        Version = "1",
+        Version = "2",
         Units = [Golem, Ghoul, Wyrm, Vampire, Goblin, Devourer, Wraithblade, Deathcap]
     };
 
