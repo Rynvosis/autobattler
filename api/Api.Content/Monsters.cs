@@ -281,16 +281,64 @@ public static class Monsters
     // TODO: Basilisk 3/5 🐍, on-attack, target self: petrify the attacker, which skips one attack.
     // Needs status effects: unit state the scheduler reads.
 
-    // TODO: Coinbug 1/4 🪲, on-death, target self: +1 gold.
-    // Needs the run side effect system: an effect that changes the run.
+    public static readonly UnitDefinition Coinbug = new()
+    {
+        Kind = new Kind("coinbug"),
+        Name = "Coinbug",
+        Icon = "🪲",
+        Description = "On death: pays 2 gold.",
+        Attack = 1,
+        Health = 4,
+        Tier = 1,
+        Ability = new Ability<UnitDeathEvent>
+        {
+            Trigger = new UnitTrigger<UnitDeathEvent>
+            {
+                Participant = new EventTarget(),
+                Scopes = [Any<BattleEvent>.Of(new Self())]
+            },
+            Effects =
+            [
+                new ScopedEffect<UnitDeathEvent>
+                {
+                    Effect = new Bounty<UnitDeathEvent> { Value = Literal.Of(2) },
+                    Scopes = [Every<UnitDeathEvent>.Of(new Self())]
+                }
+            ]
+        }
+    };
 
-    // TODO: Vulture 2/5 🦅, on-kill, source self: +1 gold.
-    // Needs the run side effect system.
+    public static readonly UnitDefinition Vulture = new()
+    {
+        Kind = new Kind("vulture"),
+        Name = "Vulture",
+        Icon = "🦅",
+        Description = "When this unit kills an enemy: pays 1 gold.",
+        Attack = 2,
+        Health = 5,
+        Tier = 1,
+        Ability = new Ability<UnitKillEvent>
+        {
+            Trigger = new UnitTrigger<UnitKillEvent>
+            {
+                Participant = new EventSource(),
+                Scopes = [Any<BattleEvent>.Of(new Self())]
+            },
+            Effects =
+            [
+                new ScopedEffect<UnitKillEvent>
+                {
+                    Effect = new Bounty<UnitKillEvent> { Value = Literal.Of(1) },
+                    Scopes = [Every<UnitKillEvent>.Of(new Self())]
+                }
+            ]
+        }
+    };
 
     public static readonly ContentManifest Manifest = new()
     {
-        Version = "2",
-        Units = [Golem, Ghoul, Wyrm, Vampire, Goblin, Devourer, Wraithblade, Deathcap]
+        Version = "3",
+        Units = [Golem, Ghoul, Wyrm, Vampire, Goblin, Devourer, Wraithblade, Deathcap, Coinbug, Vulture]
     };
 
     public static readonly Roster Roster = Manifest.ToRoster();

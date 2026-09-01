@@ -43,4 +43,10 @@ public sealed record UnitHealthChangeEvent : SourcedUnitEvent
 
 public sealed record UnitDeathEvent : UnitEvent;
 
+// A unit earns a bounty; what it is worth is the run's to say.
+public sealed record UnitBountyEvent : UnitEvent
+{
+    public required int Value { get; init; }
+}
+
 public sealed record UnitKillEvent : SourcedUnitEvent;

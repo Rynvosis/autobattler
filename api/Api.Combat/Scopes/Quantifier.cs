@@ -32,6 +32,8 @@ public sealed record Every<TEvent> where TEvent : BattleEvent
 
     public static Every<TEvent> Of(IRelation<TEvent> relation) => new() { Relation = relation };
 
-    public IReadOnlyList<Unit> Of(Context context, TEvent battleEvent) =>
-        Range.Slice([.. Relation.Of(context, battleEvent).Where(unit => !unit.Dead)]);
+    // `reaches` is applied before the range is sliced, so "the enemy at 0" means the first one
+    // the effect can actually reach.
+    public IReadOnlyList<Unit> Of(Context context, TEvent battleEvent, Func<Unit, bool> reaches) =>
+        Range.Slice([.. Relation.Of(context, battleEvent).Where(reaches)]);
 }

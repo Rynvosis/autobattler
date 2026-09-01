@@ -7,6 +7,10 @@ public sealed record BattleResponse
 {
     public required Run Run { get; init; }
     public required BattleRecord Battle { get; init; }
+
+    // Part of the run's new gold, so the client can name its source without deciding for
+    // itself which bounties were the player's.
+    public required int BountyEarned { get; init; }
 }
 
 public sealed record BattleRecord

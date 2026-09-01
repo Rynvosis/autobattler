@@ -4,6 +4,8 @@ namespace Api.Combat.Tests;
 
 public class ScopeTests
 {
+    private static readonly Func<Unit, bool> Living = unit => !unit.Dead;
+
     public static TheoryData<IRelation<UnitHurtEvent>, ScopeRange, int, int, int, int[]> EveryCases => new()
     {
         { new Self(), ScopeRange.From(0), 0, 1, 3, [0] },
@@ -39,7 +41,7 @@ public class ScopeTests
         Every<UnitHurtEvent> scope = new() { Relation = relation, Range = range };
 
         IReadOnlyList<Unit> resolved =
-            scope.Of(new Context(board, Boards.Find(board, ownerId)), Boards.HurtEvent(board, sourceId, targetId));
+            scope.Of(new Context(board, Boards.Find(board, ownerId)), Boards.HurtEvent(board, sourceId, targetId), Living);
 
         Assert.Equal(expected, resolved.Select(unit => unit.Id));
     }
@@ -57,7 +59,7 @@ public class ScopeTests
         };
 
         IReadOnlyList<Unit> resolved =
-            scope.Of(new Context(board, Boards.Find(board, 4)), Boards.HurtEvent(board, 1, 3));
+            scope.Of(new Context(board, Boards.Find(board, 4)), Boards.HurtEvent(board, 1, 3), Living);
 
         Assert.Equal([0], resolved.Select(unit => unit.Id));
     }
@@ -71,7 +73,7 @@ public class ScopeTests
         Every<UnitHurtEvent> scope = new() { Relation = new FromHead { Side = ScopeSide.Ally } };
 
         IReadOnlyList<Unit> resolved =
-            scope.Of(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 1, 3));
+            scope.Of(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 1, 3), Living);
 
         Assert.Equal([0, 4], resolved.Select(unit => unit.Id));
     }
@@ -118,7 +120,7 @@ public class ScopeTests
         };
 
         IReadOnlyList<Unit> resolved =
-            scope.Of(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 1, 0));
+            scope.Of(new Context(board, Boards.Find(board, 0)), Boards.HurtEvent(board, 1, 0), Living);
 
         Assert.Equal([0, 4], resolved.Select(unit => unit.Id));
     }

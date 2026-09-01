@@ -81,11 +81,17 @@ function openingBoard(record) {
   };
 }
 
-export function useReplay(record, onDone) {
+export function useReplay(record, onDone, onBounty) {
   const [board, setBoard] = useState(() => openingBoard(record));
   const [clock, setClock] = useState("");
   const cards = useRef(new Map());
   const started = useRef(false);
+
+  // `onDone` closes over the whole game and is rebuilt every render, so depending on it would
+  // let any mid-battle state change rerun this effect — whose cleanup abandons the loop it
+  // started. Held by reference, the battle depends on the log alone.
+  const done = useRef(onDone);
+  done.current = onDone;
 
   const register = useCallback((id, element) => {
     if (element) cards.current.set(id, element);
@@ -108,7 +114,8 @@ export function useReplay(record, onDone) {
         const ms = durationMs(batch.tick, batch.subtick);
         setClock(`tick ${batch.tick} · subtick ${batch.subtick}`);
 
-        for (const event of batch.events) apply(event, state, cards.current, ms, flights);
+        for (const event of batch.events)
+          applyEvent(event, state, cards.current, ms, flights, onBounty);
         setBoard({ units: new Map(state.units), order: { ...state.order } });
         await sleep(ms);
 
@@ -137,16 +144,16 @@ export function useReplay(record, onDone) {
 
       if (!live) return;
       setClock("");
-      onDone();
+      done.current();
     })();
 
     return () => { live = false; };
-  }, [record, onDone]);
+  }, [record, onBounty]);
 
   return { board, clock, register };
 }
 
-function apply(event, state, cards, ms, flights) {
+function applyEvent(event, state, cards, ms, flights, onBounty) {
   const target = state.units.get(event.target);
   const source = state.units.get(event.source);
 
@@ -180,7 +187,26 @@ function apply(event, state, cards, ms, flights) {
       target.dead = true;
       die(cards.get(event.target), ms);
       break;
+    // A ghost's bounty has no purse to fall into: the server pays the player's units only.
+    case "unitBounty":
+      if (target.side === "player") {
+        collect(cards.get(event.target), event.value, ms, flights, onBounty);
+      }
+      break;
   }
+}
+
+// The purse must not rise before the coin arrives, so the count waits on the flight.
+function collect(card, value, ms, flights, onBounty) {
+  const purse = document.getElementById("gold-pip");
+  const landed = throwPellet(card, purse, ms, "pellet-coin", flights);
+
+  if (!landed) return onBounty(value);
+
+  landed.then(() => {
+    onBounty(value);
+    float(purse, value, "🪙", "float-attack", "attack", ms);
+  });
 }
 
 function throwAbilityPellet(event, cards, ms, flights) {

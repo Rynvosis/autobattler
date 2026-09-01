@@ -10,6 +10,7 @@ namespace Api.Battles;
 [JsonDerivedType(typeof(UnitHealthChangeRecord), "unitHealthChange")]
 [JsonDerivedType(typeof(UnitDeathRecord), "unitDeath")]
 [JsonDerivedType(typeof(UnitKillRecord), "unitKill")]
+[JsonDerivedType(typeof(UnitBountyRecord), "unitBounty")]
 public abstract record EventRecord
 {
     public int Tick { get; init; }
@@ -35,6 +36,11 @@ public abstract record ValuedRecord : SourcedRecord
 public sealed record StartRecord : EventRecord;
 
 public sealed record UnitDeathRecord : TargetedRecord;
+
+public sealed record UnitBountyRecord : TargetedRecord
+{
+    public required int Value { get; init; }
+}
 
 public sealed record UnitKillRecord : SourcedRecord;
 
