@@ -85,7 +85,8 @@ public sealed class OpponentsTests(ApiFixture fixture) : ApiTests(fixture)
             Gold = Economy.StartingGold,
             Stage = stage,
             ExpiresAt = DateTimeOffset.FromUnixTimeSeconds(1787769654),
-            Units = [new TeamUnit { Kind = new Kind("golem"), Attack = 5, Health = 10 }]
+            Units = [new TeamUnit { Kind = new Kind("golem"), Attack = 5, Health = 10 }],
+            Shop = []
         };
     }
 }

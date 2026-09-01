@@ -8,31 +8,38 @@ namespace Api.Teams;
 
 public static class TeamUnits
 {
-    public static AttributeValue ToItem(IReadOnlyList<TeamUnit> units) => new()
+    public static AttributeValue ToItems(IReadOnlyList<TeamUnit> units)
     {
-        L =
-        [
-            .. units.Select(unit => new AttributeValue
-            {
-                M = new Dictionary<string, AttributeValue>
-                {
-                    [Attributes.Kind] = new AttributeValue { S = unit.Kind.Value },
-                    [Attributes.Attack] = AttributeValues.Number(unit.Attack),
-                    [Attributes.Health] = AttributeValues.Number(unit.Health)
-                }
-            })
-        ]
-    };
+        return new AttributeValue { L = [.. units.Select(ToItem)] };
+    }
 
-    public static IReadOnlyList<TeamUnit> FromItem(AttributeValue value) =>
-    [
-        .. value.L.Select(unit => new TeamUnit
+    public static IReadOnlyList<TeamUnit> FromItems(AttributeValue value)
+    {
+        return [.. value.L.Select(FromItem)];
+    }
+
+    public static AttributeValue ToItem(TeamUnit unit)
+    {
+        return new AttributeValue
+        {
+            M = new Dictionary<string, AttributeValue>
+            {
+                [Attributes.Kind] = new() { S = unit.Kind.Value },
+                [Attributes.Attack] = AttributeValues.Number(unit.Attack),
+                [Attributes.Health] = AttributeValues.Number(unit.Health)
+            }
+        };
+    }
+
+    public static TeamUnit FromItem(AttributeValue unit)
+    {
+        return new TeamUnit
         {
             Kind = new Kind(unit.M[Attributes.Kind].S),
             Attack = AttributeValues.ToInt32(unit.M[Attributes.Attack]),
             Health = AttributeValues.ToInt32(unit.M[Attributes.Health])
-        })
-    ];
+        };
+    }
 
     // Combat mutates the units it is given, and unit ids are disjoint across both teams.
     public static Team ToTeam(IReadOnlyList<TeamUnit> units, int firstId) =>

@@ -277,6 +277,9 @@ public static class Monsters
 
     public static readonly Roster Roster = Manifest.ToRoster();
 
+    // Random.Shared.GetItems takes an array, which Units is not.
+    public static readonly UnitDefinition[] Pool = [.. Manifest.Units];
+
     private static Ability DevourerAbility()
     {
         Ahead<StartEvent> ahead = new() { Anchor = One<StartEvent>.Of(new Self()) };

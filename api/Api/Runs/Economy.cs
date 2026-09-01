@@ -6,6 +6,7 @@ public static class Economy
 {
     public const int TotalStages = 5;
     public const int TeamSize = 5;
+    public const int ShopSize = 3;
 
     public const int StartingGold = 7;
 

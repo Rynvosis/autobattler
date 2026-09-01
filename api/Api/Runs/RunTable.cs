@@ -14,6 +14,9 @@ public static class RunTable
     public const string Stage = "stage";
     public const string ExpiresAt = "expiresAt";
     public const string Units = "units";
+    public const string Shop = "shop";
+    public const string Duplicated = "duplicated";
+    public const string UpgradeCredits = "upgradeCredits";
 
     public static CreateTableRequest CreateRequest() => new()
     {
